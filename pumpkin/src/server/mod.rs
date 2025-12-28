@@ -38,6 +38,7 @@ use std::net::IpAddr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU32};
 use std::{future::Future, sync::atomic::Ordering, time::Duration};
+use std::path::Path;
 use tokio::sync::{Mutex, RwLock};
 use tokio::task::JoinHandle;
 use tokio_util::task::TaskTracker;
@@ -115,10 +116,19 @@ impl Server {
     pub async fn new(
         basic_config: BasicConfiguration,
         advanced_config: AdvancedConfiguration,
+        probe_root: &Path,
     ) -> Arc<Self> {
         // First register the default commands. After that, plugins can put in their own.
         let command_dispatcher = RwLock::new(default_dispatcher(&basic_config).await);
-        let world_path = basic_config.get_world_path();
+
+        // UWP SHIM: Rebase world path
+        // We ignore the config's raw relative path and force it to be absolute inside LocalState.
+        let raw_path = basic_config.get_world_path();
+        let world_path = if raw_path.is_relative() {
+            probe_root.join(&raw_path)
+        } else {
+            raw_path
+        };
 
         let block_registry = super::block::registry::default_registry();
 
@@ -127,23 +137,25 @@ impl Server {
             match error {
                 // If it doesn't exist, just make a new one
                 WorldInfoError::InfoNotFound => (),
-                WorldInfoError::UnsupportedDataVersion(_version)
-                | WorldInfoError::UnsupportedLevelVersion(_version) => {
-                    log::error!("Failed to load world info!");
-                    log::error!("{error}");
+                WorldInfoError::UnsupportedDataVersion(v)
+                | WorldInfoError::UnsupportedLevelVersion(v) => {
+                    log::error!("Unsupported version: {:?}", v);
                     panic!("Unsupported world version! See the logs for more info.");
                 }
                 e => {
-                    panic!("World Error {e}");
+                    panic!("World Error {:?}", e);
                 }
             }
         } else {
             let dat_path = world_path.join(LEVEL_DAT_FILE_NAME);
             if dat_path.exists() {
                 let backup_path = world_path.join(LEVEL_DAT_BACKUP_FILE_NAME);
-                fs::copy(dat_path, backup_path).unwrap();
+                if let Err(e) = fs::copy(&dat_path, &backup_path) {
+                     log::warn!("Failed to backup level.dat: {}", e);
+                }
             }
         }
+
         let locker = match AnvilLevelLocker::lock(&world_path) {
             Ok(l) => Some(l),
             Err(err) => {
@@ -166,6 +178,8 @@ impl Server {
         let defaultgamemode = Mutex::new(DefaultGamemode {
             gamemode: basic_config.default_gamemode,
         });
+        
+        // Ensure player data uses the rebased path
         let player_data_storage = ServerPlayerData::new(
             world_path.join("playerdata"),
             Duration::from_secs(advanced_config.player_data.save_player_cron_interval),

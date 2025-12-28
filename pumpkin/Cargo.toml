@@ -13,7 +13,13 @@ LegalCopyright = "Copyright © 2025 Aleksander Medvedev"
 
 # Required to expose pumpkin plugin API
 [lib]
+crate-type = ["cdylib"]
 doctest = false
+
+[[bin]]
+name = "pumpkin"
+path = "src/main.rs"
+required-features = ["build-binary"]
 
 [dependencies]
 # pumpkin
@@ -95,5 +101,6 @@ signature = "2.2.0"
 tempfile.workspace = true
 
 [features]
+build-binary = []
 console-subscriber = ["dep:console-subscriber"]
 tokio_taskdump = ["pumpkin-world/tokio_taskdump"]

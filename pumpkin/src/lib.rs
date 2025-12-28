@@ -172,26 +172,25 @@ impl PumpkinServer {
     pub async fn new(
         basic_config: BasicConfiguration,
         advanced_config: AdvancedConfiguration,
+        probe_root: &std::path::Path,
     ) -> Self {
-        let server = Server::new(basic_config, advanced_config).await;
+        let server = Server::new(basic_config, advanced_config, probe_root).await;
 
         let rcon = server.advanced_config.networking.rcon.clone();
 
         let mut ticker = Ticker::new();
 
-        if server.advanced_config.commands.use_console
-            && let Some((wrapper, _)) = LOGGER_IMPL.wait()
-        {
-            if let Some(rl) = wrapper.take_readline() {
-                setup_console(rl, server.clone());
-            } else {
-                if server.advanced_config.commands.use_tty {
-                    log::warn!(
-                        "The input is not a TTY; falling back to simple logger and ignoring `use_tty` setting"
-                    );
+        if server.advanced_config.commands.use_console {
+             if let Some(logger_opt) = LOGGER_IMPL.get() {
+                if let Some((wrapper, _)) = logger_opt {
+                    if let Some(rl) = wrapper.take_readline() {
+                        setup_console(rl, server.clone());
+                    } else {
+                        log::warn!("Falling back to simple logger (UWP warning: stdin is likely broken)");
+                        setup_stdin_console(server.clone()).await;
+                    }
                 }
-                setup_stdin_console(server.clone()).await;
-            }
+             }
         }
 
         if rcon.enabled {
@@ -208,9 +207,13 @@ impl PumpkinServer {
 
         if server.basic_config.java_edition {
             // Setup the TCP server socket.
-            let listener = tokio::net::TcpListener::bind(server.basic_config.java_edition_address)
-                .await
-                .expect("Failed to start `TcpListener`");
+            let listener = match tokio::net::TcpListener::bind(server.basic_config.java_edition_address).await {
+                Ok(l) => l,
+                Err(e) => {
+                    panic!("UWP FATAL: Failed to bind TCP listener. Error: {}", e);
+                }
+            };
+
             // In the event the user puts 0 for their port, this will allow us to know what port it is running on
             let addr = listener
                 .local_addr()
@@ -238,9 +241,12 @@ impl PumpkinServer {
         }
 
         if server.basic_config.allow_chat_reports {
-            let mojang_public_keys =
-                fetch_mojang_public_keys(&server.advanced_config.networking.authentication)
-                    .unwrap();
+            let mojang_public_keys = match fetch_mojang_public_keys(&server.advanced_config.networking.authentication) {
+                Ok(k) => k,
+                Err(e) => {
+                    panic!("UWP FATAL: Failed to fetch Mojang keys. Error: {:?}", e);
+                }
+            };
             *server.mojang_public_keys.lock().await = mojang_public_keys;
         }
 
@@ -255,11 +261,13 @@ impl PumpkinServer {
         let mut udp_socket = None;
 
         if server.basic_config.bedrock_edition {
-            udp_socket = Some(Arc::new(
-                UdpSocket::bind(server.basic_config.bedrock_edition_address)
-                    .await
-                    .expect("Failed to bind UDP Socket"),
-            ));
+            let socket = match UdpSocket::bind(server.basic_config.bedrock_edition_address).await {
+                Ok(s) => s,
+                Err(e) => {
+                    panic!("UWP FATAL: Failed to bind UDP socket. Error: {}", e);
+                }
+            };
+            udp_socket = Some(Arc::new(socket));
         }
 
         Self {
@@ -330,11 +338,12 @@ impl PumpkinServer {
 
         log::info!("Completed save!");
 
-        // Explicitly drop the line reader to return the terminal to the original state.
-        if let Some((wrapper, _)) = LOGGER_IMPL.wait()
-            && let Some(rl) = wrapper.take_readline()
-        {
-            let _ = rl;
+        if let Some(logger_opt) = LOGGER_IMPL.get() {
+             if let Some((wrapper, _)) = logger_opt {
+                 if let Some(rl) = wrapper.take_readline() {
+                     let _ = rl;
+                 }
+             }
         }
     }
 
@@ -552,4 +561,168 @@ fn scrub_address(ip: &str) -> String {
     ip.chars()
         .map(|ch| if ch == '.' || ch == ':' { ch } else { 'x' })
         .collect()
+}
+
+use std::os::raw::c_char;
+use std::ffi::CStr;
+use std::panic;
+use tokio::runtime::Runtime;
+use log::{Record, Metadata}; 
+use std::io::Write;
+
+struct UwpLogger {
+    file_path: std::path::PathBuf,
+    file: std::sync::Mutex<Option<std::fs::File>>, 
+}
+
+impl UwpLogger {
+    fn new(path: std::path::PathBuf) -> Self {
+        let log_path = path.join("uwp_server.log");
+        let file = std::fs::File::create(&log_path).ok(); 
+        Self {
+            file_path: log_path,
+            file: std::sync::Mutex::new(file),
+        }
+    }
+}
+
+impl log::Log for UwpLogger {
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        metadata.level() <= log::Level::Info
+    }
+
+    fn log(&self, record: &Record) {
+        if self.enabled(record.metadata()) {
+            let msg = format!(
+                "[{}] [{}] {}\n",
+                record.level(),
+                record.target(),
+                record.args()
+            );
+
+            if let Ok(mut guard) = self.file.lock() {
+                if let Some(f) = guard.as_mut() {
+                    let _ = f.write_all(msg.as_bytes());
+                    let _ = f.flush(); 
+                }
+            }
+
+            unsafe {
+                use std::os::windows::ffi::OsStrExt;
+                let wide: Vec<u16> = std::ffi::OsStr::new(&msg)
+                    .encode_wide()
+                    .chain(std::iter::once(0))
+                    .collect();
+                #[link(name = "kernel32")]
+                unsafe extern "system" {
+                    fn OutputDebugStringW(lpOutputString: *const u16);
+                }
+                OutputDebugStringW(wide.as_ptr());
+            }
+        }
+    }
+
+    fn flush(&self) {}
+}
+
+static UWP_LOGGER: std::sync::OnceLock<UwpLogger> = std::sync::OnceLock::new();
+
+fn uwp_init_logger(config_dir: &std::path::Path) {
+    let logger = UWP_LOGGER.get_or_init(|| UwpLogger::new(config_dir.to_path_buf()));
+    let _ = log::set_logger(logger);
+    log::set_max_level(LevelFilter::Info);
+}
+
+fn uwp_init_panic_hook() {
+    std::panic::set_hook(Box::new(|info| {
+        let msg = match info.payload().downcast_ref::<&str>() {
+            Some(s) => *s,
+            None => match info.payload().downcast_ref::<String>() {
+                Some(s) => &**s,
+                None => "Box<Any>",
+            },
+        };
+        let location = info.location().map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column())).unwrap_or_else(|| "unknown".to_string());
+        let err_msg = format!("\n[PANIC] Thread '{:?}' panicked at '{}': {}\n", std::thread::current().name(), location, msg);
+
+        unsafe {
+            use std::os::windows::ffi::OsStrExt;
+            let wide: Vec<u16> = std::ffi::OsStr::new(&err_msg)
+                .encode_wide()
+                .chain(std::iter::once(0))
+                .collect();
+            #[link(name = "kernel32")]
+            unsafe extern "system" {
+                fn OutputDebugStringW(lpOutputString: *const u16);
+            }
+            OutputDebugStringW(wide.as_ptr());
+        }
+
+        log::error!("{}", err_msg);
+        
+        if let Some(logger) = UWP_LOGGER.get() {
+            if let Ok(mut guard) = logger.file.lock() {
+                if let Some(f) = guard.as_mut() {
+                    let _ = f.write_all(err_msg.as_bytes());
+                    let _ = f.flush();
+                }
+            }
+        }
+    }));
+}
+
+async fn uwp_run_server_loop(config_dir: &std::path::Path) -> i32 {
+    use pumpkin_config::LoadConfiguration;
+
+    let basic_config = BasicConfiguration::load(config_dir);
+    let advanced_config = AdvancedConfiguration::load(config_dir);
+    let pumpkin_server = PumpkinServer::new(basic_config, advanced_config, config_dir).await;
+
+    pumpkin_server.init_plugins().await;
+    pumpkin_server.start().await;
+
+    0 
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn pumpkin_run_from_config_dir(config_dir_utf8: *const c_char) -> i32 {
+    let result = panic::catch_unwind(|| unsafe {
+        if config_dir_utf8.is_null() { return -1; }
+
+        let c_str = CStr::from_ptr(config_dir_utf8);
+        let config_dir_str = match c_str.to_str() {
+            Ok(s) => s,
+            Err(_) => return -2,
+        };
+
+        let config_dir = std::path::PathBuf::from(config_dir_str);
+
+        uwp_init_logger(&config_dir);
+        uwp_init_panic_hook(); 
+        
+        crate::data::set_data_root(config_dir.clone());
+        
+        log::info!("Pumpkin UWP Initialized.");
+
+        let rt = match Runtime::new() {
+            Ok(rt) => rt,
+            Err(e) => {
+                log::error!("Failed to create runtime: {}", e);
+                return -6;
+            }
+        };
+
+        log::info!("Starting server loop...");
+        rt.block_on(uwp_run_server_loop(&config_dir))
+    });
+
+    match result {
+        Ok(code) => code,
+        Err(_) => -999, 
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn pumpkin_request_stop() {
+    stop_server();
 }

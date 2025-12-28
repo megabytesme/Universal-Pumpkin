@@ -1,4 +1,5 @@
-use std::{env, fs, path::Path};
+use std::{env, fs, path::{Path, PathBuf}};
+use std::sync::OnceLock;
 
 use serde::{Deserialize, Serialize};
 
@@ -12,13 +13,26 @@ pub mod banned_player_data;
 pub mod player_server_data;
 pub mod whitelist_data;
 
+pub static OVERRIDE_DATA_ROOT: OnceLock<PathBuf> = OnceLock::new();
+
+pub fn set_data_root(path: PathBuf) {
+    let _ = OVERRIDE_DATA_ROOT.set(path);
+}
+
+fn get_base_dir() -> PathBuf {
+    OVERRIDE_DATA_ROOT.get()
+        .cloned()
+        .unwrap_or_else(|| env::current_dir().unwrap())
+}
+
 pub trait LoadJSONConfiguration {
     #[must_use]
     fn load() -> Self
     where
         Self: Sized + Default + Serialize + for<'de> Deserialize<'de>,
     {
-        let exe_dir = env::current_dir().unwrap();
+        let exe_dir = get_base_dir();
+        
         let data_dir = exe_dir.join(DATA_FOLDER);
         if !data_dir.exists() {
             log::debug!("creating new data root folder");
@@ -63,7 +77,8 @@ pub trait SaveJSONConfiguration: LoadJSONConfiguration {
     where
         Self: Sized + Default + Serialize + for<'de> Deserialize<'de>,
     {
-        let exe_dir = env::current_dir().unwrap();
+        let exe_dir = get_base_dir();
+        
         let data_dir = exe_dir.join(DATA_FOLDER);
         if !data_dir.exists() {
             log::debug!("creating new data root folder");
