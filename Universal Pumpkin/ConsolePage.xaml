@@ -10,15 +10,30 @@
 
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <ScrollViewer x:Name="LogScroller" Grid.Row="0" Margin="15" Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}">
+        <Grid x:Name="IpCard" Grid.Row="0" Margin="15,15,15,0" Visibility="Collapsed"
+              Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" Padding="15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <TextBlock Text="&#xEC27;" FontFamily="Segoe MDL2 Assets" FontSize="20" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="{ThemeResource SystemControlBackgroundAccentBrush}"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Padding="8" VerticalAlignment="Center">
+                <TextBlock Text="Server IP:" Foreground="Gray"/>
+                <TextBlock x:Name="TxtIpAddress" Text="Loading..." FontWeight="Bold" IsTextSelectionEnabled="True" Margin="4,0,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <ScrollViewer x:Name="LogScroller" Grid.Row="1" Margin="15" Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}">
             <TextBlock x:Name="TxtLog" TextWrapping="Wrap" FontFamily="Consolas" FontSize="14" IsTextSelectionEnabled="True"/>
         </ScrollViewer>
 
-        <Grid Grid.Row="1" Padding="15,0,15,12">
+        <Grid Grid.Row="2" Padding="15,0,15,12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -35,9 +50,7 @@
             </CommandBar.Content>
             <CommandBar.PrimaryCommands>
                 <AppBarButton x:Name="BtnStart" Label="Start Server" Icon="Play" Click="BtnStart_Click"/>
-
                 <AppBarButton x:Name="BtnStop" Label="Stop Server" Icon="Stop" Click="BtnStop_Click" Visibility="Collapsed"/>
-
                 <AppBarButton x:Name="BtnRestartApp" Label="Restart App" Icon="Refresh" Click="BtnRestartApp_Click" Visibility="Collapsed"/>
             </CommandBar.PrimaryCommands>
         </CommandBar>

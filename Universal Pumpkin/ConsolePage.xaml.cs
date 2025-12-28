@@ -20,31 +20,6 @@ namespace Universal_Pumpkin
             Controller.OnServerStopped += Controller_OnServerStopped;
         }
 
-        private async void Controller_OnLogReceived(object sender, string e)
-        {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-            {
-                TxtLog.Text += e + "\n";
-                LogScroller.ChangeView(null, LogScroller.ScrollableHeight, null);
-            });
-        }
-
-        private async void Controller_OnServerStopped(object sender, int e)
-        {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-            {
-                BtnStop.Visibility = Visibility.Collapsed;
-                BtnStart.Visibility = Visibility.Collapsed;
-                BtnRestartApp.Visibility = Visibility.Visible;
-
-                BoxCommand.IsEnabled = false;
-                BtnSend.IsEnabled = false;
-
-                TxtStatus.Text = $"Server Stopped (Code {e})";
-                TxtLog.Text += $"\n[System] Server stopped. Please restart the app to run again.\n";
-            });
-        }
-
         private async void BtnStart_Click(object sender, RoutedEventArgs e)
         {
             var h = NativeProbe.TryLoadPumpkin();
@@ -65,7 +40,37 @@ namespace Universal_Pumpkin
             TxtStatus.Text = "Running";
             TxtLog.Text = "";
 
+            TxtIpAddress.Text = IpAddressHelper.GetLocalIpAddress();
+            IpCard.Visibility = Visibility.Visible;
+
             await Controller.StartServerAsync();
+        }
+
+        private async void Controller_OnServerStopped(object sender, int e)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                IpCard.Visibility = Visibility.Collapsed;
+
+                BtnStop.Visibility = Visibility.Collapsed;
+                BtnStart.Visibility = Visibility.Collapsed;
+                BtnRestartApp.Visibility = Visibility.Visible;
+
+                BoxCommand.IsEnabled = false;
+                BtnSend.IsEnabled = false;
+
+                TxtStatus.Text = $"Server Stopped (Code {e})";
+                TxtLog.Text += $"\n[System] Server stopped. Please restart the app to run again.\n";
+            });
+        }
+
+        private async void Controller_OnLogReceived(object sender, string e)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                TxtLog.Text += e + "\n";
+                LogScroller.ChangeView(null, LogScroller.ScrollableHeight, null);
+            });
         }
 
         private void BtnStop_Click(object sender, RoutedEventArgs e)
