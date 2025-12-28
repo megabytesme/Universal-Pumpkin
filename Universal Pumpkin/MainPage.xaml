@@ -16,15 +16,15 @@
 
                 <ListBox x:Name="NavListBox" SelectionChanged="NavListBox_SelectionChanged" Background="Transparent">
                     <ListBoxItem Tag="Console">
-                        <StackPanel Orientation="Horizontal" Padding="12">
-                            <TextBlock Text="&#xE7F8;" FontFamily="Segoe MDL2 Assets" FontSize="16" VerticalAlignment="Center"/>
-                            <TextBlock Text="Console" VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" Padding="4">
+                            <TextBlock Text="&#xE7F8;" FontFamily="Segoe MDL2 Assets" FontSize="18" VerticalAlignment="Center"/>
+                            <TextBlock Text="Console" VerticalAlignment="Center" Margin="16,0,0,0"/>
                         </StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="Settings">
-                        <StackPanel Orientation="Horizontal" Padding="12">
-                            <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="16" VerticalAlignment="Center"/>
-                            <TextBlock Text="Settings" VerticalAlignment="Center"/>
+                        <StackPanel Orientation="Horizontal" Padding="4">
+                            <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="18" VerticalAlignment="Center"/>
+                            <TextBlock Text="Settings" VerticalAlignment="Center" Margin="16,0,0,0"/>
                         </StackPanel>
                     </ListBoxItem>
                 </ListBox>

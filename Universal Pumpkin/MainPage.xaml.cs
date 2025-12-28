@@ -27,7 +27,7 @@ namespace Universal_Pumpkin
                         ContentFrame.Navigate(typeof(ConsolePage));
                         break;
                     case "Settings":
-                        // ContentFrame.Navigate(typeof(SettingsPage));
+                        ContentFrame.Navigate(typeof(SettingsPage));
                         break;
                 }
             }
