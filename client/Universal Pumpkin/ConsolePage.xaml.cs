@@ -1,4 +1,5 @@
 ﻿using System;
+using Windows.ApplicationModel.Core;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
@@ -24,7 +25,6 @@ namespace Universal_Pumpkin
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
                 TxtLog.Text += e + "\n";
-
                 LogScroller.ChangeView(null, LogScroller.ScrollableHeight, null);
             });
         }
@@ -33,12 +33,15 @@ namespace Universal_Pumpkin
         {
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                BtnStart.IsEnabled = true;
-                BtnStop.IsEnabled = false;
+                BtnStop.Visibility = Visibility.Collapsed;
+                BtnStart.Visibility = Visibility.Collapsed;
+                BtnRestartApp.Visibility = Visibility.Visible;
+
                 BoxCommand.IsEnabled = false;
                 BtnSend.IsEnabled = false;
-                TxtStatus.Text = $"Stopped (Code {e})";
-                TxtLog.Text += $"\n[System] Server stopped with code {e}.\n";
+
+                TxtStatus.Text = $"Server Stopped (Code {e})";
+                TxtLog.Text += $"\n[System] Server stopped. Please restart the app to run again.\n";
             });
         }
 
@@ -47,14 +50,18 @@ namespace Universal_Pumpkin
             var h = NativeProbe.TryLoadPumpkin();
             if (h == IntPtr.Zero)
             {
-                TxtStatus.Text = "Failed to load DLL!";
+                TxtStatus.Text = "Error: DLL missing";
                 return;
             }
 
-            BtnStart.IsEnabled = false;
+            BtnStart.Visibility = Visibility.Collapsed;
+            BtnRestartApp.Visibility = Visibility.Collapsed;
+            BtnStop.Visibility = Visibility.Visible;
             BtnStop.IsEnabled = true;
+
             BoxCommand.IsEnabled = true;
             BtnSend.IsEnabled = true;
+
             TxtStatus.Text = "Running";
             TxtLog.Text = "";
 
@@ -63,9 +70,27 @@ namespace Universal_Pumpkin
 
         private void BtnStop_Click(object sender, RoutedEventArgs e)
         {
-            Controller.StopServer();
             BtnStop.IsEnabled = false;
             TxtStatus.Text = "Stopping...";
+            Controller.StopServer();
+        }
+
+        private async void BtnRestartApp_Click(object sender, RoutedEventArgs e)
+        {
+            var restartDialog = new ContentDialog
+            {
+                Title = "Restart app",
+                Content = "Due to limitations from Pumpkin, the app has to be restarted in order to start the server again. Would you like the app to close now?",
+                PrimaryButtonText = "Yes",
+                SecondaryButtonText = "No"
+            };
+
+            ContentDialogResult result = await restartDialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                CoreApplication.Exit();
+            }
         }
 
         private void SendCommand()
@@ -75,6 +100,7 @@ namespace Universal_Pumpkin
                 Controller.SendCommand(BoxCommand.Text);
                 TxtLog.Text += $"> {BoxCommand.Text}\n";
                 BoxCommand.Text = "";
+                BoxCommand.Focus(FocusState.Programmatic);
             }
         }
 
