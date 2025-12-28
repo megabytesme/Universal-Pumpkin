@@ -1,4 +1,5 @@
 ﻿using System;
+using Windows.ApplicationModel.Core;
 using Windows.Storage;
 using Windows.System;
 using Windows.UI.Xaml;
@@ -145,22 +146,50 @@ namespace Universal_Pumpkin
 
         private async void BtnReset_Click(object sender, RoutedEventArgs e)
         {
-            var folder = ApplicationData.Current.LocalFolder;
-            try
+            var deleteDialog = new ContentDialog
             {
-                try { var w = await folder.GetFolderAsync("world"); await w.DeleteAsync(); } catch { }
-                try { var l = await folder.GetFileAsync("level.dat"); await l.DeleteAsync(); } catch { }
-                try { var lb = await folder.GetFileAsync("level.dat_old"); await lb.DeleteAsync(); } catch { }
-                try { var p = await folder.GetFolderAsync("playerdata"); await p.DeleteAsync(); } catch { }
+                Title = "Delete World Files",
+                Content = "Are you sure you want to continue? This action is permanent.",
+                PrimaryButtonText = "Yes",
+                SecondaryButtonText = "No"
+            };
 
-                var btn = (Button)sender;
-                btn.Content = "Data Deleted! Restart App.";
-                btn.IsEnabled = false;
-            }
-            catch (Exception ex)
+            ContentDialogResult deleteResult = await deleteDialog.ShowAsync();
+
+            if (deleteResult == ContentDialogResult.Primary)
             {
-                var btn = (Button)sender;
-                btn.Content = "Error: " + ex.Message;
+                var folder = ApplicationData.Current.LocalFolder;
+                try
+                {
+                    try { var w = await folder.GetFolderAsync("world"); await w.DeleteAsync(); } catch { }
+                    try { var l = await folder.GetFileAsync("level.dat"); await l.DeleteAsync(); } catch { }
+                    try { var lb = await folder.GetFileAsync("level.dat_old"); await lb.DeleteAsync(); } catch { }
+                    try { var p = await folder.GetFolderAsync("playerdata"); await p.DeleteAsync(); } catch { }
+
+                    var deleteCompleteDialog = new ContentDialog
+                    {
+                        Title = "World Files Deleted",
+                        Content = "It is recommended to restart the app. Would you like to exit now?",
+                        PrimaryButtonText = "Yes",
+                        SecondaryButtonText = "No"
+                    };
+
+                    ContentDialogResult deleteCompleteResult = await deleteCompleteDialog.ShowAsync();
+
+                    if (deleteCompleteResult == ContentDialogResult.Primary)
+                    {
+                        CoreApplication.Exit();
+                    }
+
+                    var btn = (Button)sender;
+                    btn.Content = "Data Deleted! Restart App.";
+                    btn.IsEnabled = false;
+                }
+                catch (Exception ex)
+                {
+                    var btn = (Button)sender;
+                    btn.Content = "Error: " + ex.Message;
+                }
             }
         }
 
