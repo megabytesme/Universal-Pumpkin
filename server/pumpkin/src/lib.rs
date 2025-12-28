@@ -181,6 +181,9 @@ impl PumpkinServer {
         let mut ticker = Ticker::new();
 
         if server.advanced_config.commands.use_console {
+            log::info!("Starting FFI Command Listener for UWP Console...");
+             setup_ffi_console(server.clone()).await;
+
              if let Some(logger_opt) = LOGGER_IMPL.get() {
                 if let Some((wrapper, _)) = logger_opt {
                     if let Some(rl) = wrapper.take_readline() {
@@ -564,24 +567,33 @@ fn scrub_address(ip: &str) -> String {
 }
 
 use std::os::raw::c_char;
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 use std::panic;
 use tokio::runtime::Runtime;
-use log::{Record, Metadata}; 
-use std::io::Write;
+use tokio::sync::mpsc;
+use log::{Record, Metadata};
+use std::sync::atomic::{AtomicPtr};
 
-struct UwpLogger {
-    file_path: std::path::PathBuf,
-    file: std::sync::Mutex<Option<std::fs::File>>, 
-}
+type LogCallback = extern "C" fn(*const c_char);
+
+static LOG_CALLBACK: AtomicPtr<()> = AtomicPtr::new(std::ptr::null_mut());
+
+struct UwpLogger;
 
 impl UwpLogger {
-    fn new(path: std::path::PathBuf) -> Self {
-        let log_path = path.join("uwp_server.log");
-        let file = std::fs::File::create(&log_path).ok(); 
-        Self {
-            file_path: log_path,
-            file: std::sync::Mutex::new(file),
+    fn new() -> Self {
+        Self
+    }
+    
+    fn send_to_csharp(msg: &str) {
+        let ptr = LOG_CALLBACK.load(Ordering::Relaxed);
+        if !ptr.is_null() {
+            if let Ok(c_str) = CString::new(msg) {
+                unsafe {
+                    let cb: LogCallback = std::mem::transmute(ptr);
+                    cb(c_str.as_ptr());
+                }
+            }
         }
     }
 }
@@ -594,31 +606,13 @@ impl log::Log for UwpLogger {
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
             let msg = format!(
-                "[{}] [{}] {}\n",
+                "[{}] [{}] {}",
                 record.level(),
                 record.target(),
                 record.args()
             );
-
-            if let Ok(mut guard) = self.file.lock() {
-                if let Some(f) = guard.as_mut() {
-                    let _ = f.write_all(msg.as_bytes());
-                    let _ = f.flush(); 
-                }
-            }
-
-            unsafe {
-                use std::os::windows::ffi::OsStrExt;
-                let wide: Vec<u16> = std::ffi::OsStr::new(&msg)
-                    .encode_wide()
-                    .chain(std::iter::once(0))
-                    .collect();
-                #[link(name = "kernel32")]
-                unsafe extern "system" {
-                    fn OutputDebugStringW(lpOutputString: *const u16);
-                }
-                OutputDebugStringW(wide.as_ptr());
-            }
+            
+            Self::send_to_csharp(&msg);
         }
     }
 
@@ -627,8 +621,8 @@ impl log::Log for UwpLogger {
 
 static UWP_LOGGER: std::sync::OnceLock<UwpLogger> = std::sync::OnceLock::new();
 
-fn uwp_init_logger(config_dir: &std::path::Path) {
-    let logger = UWP_LOGGER.get_or_init(|| UwpLogger::new(config_dir.to_path_buf()));
+fn uwp_init_logger() {
+    let logger = UWP_LOGGER.get_or_init(|| UwpLogger::new());
     let _ = log::set_logger(logger);
     log::set_max_level(LevelFilter::Info);
 }
@@ -643,32 +637,55 @@ fn uwp_init_panic_hook() {
             },
         };
         let location = info.location().map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column())).unwrap_or_else(|| "unknown".to_string());
+        
         let err_msg = format!("\n[PANIC] Thread '{:?}' panicked at '{}': {}\n", std::thread::current().name(), location, msg);
-
-        unsafe {
-            use std::os::windows::ffi::OsStrExt;
-            let wide: Vec<u16> = std::ffi::OsStr::new(&err_msg)
-                .encode_wide()
-                .chain(std::iter::once(0))
-                .collect();
-            #[link(name = "kernel32")]
-            unsafe extern "system" {
-                fn OutputDebugStringW(lpOutputString: *const u16);
-            }
-            OutputDebugStringW(wide.as_ptr());
-        }
 
         log::error!("{}", err_msg);
         
-        if let Some(logger) = UWP_LOGGER.get() {
-            if let Ok(mut guard) = logger.file.lock() {
-                if let Some(f) = guard.as_mut() {
-                    let _ = f.write_all(err_msg.as_bytes());
-                    let _ = f.flush();
-                }
+        UwpLogger::send_to_csharp(&err_msg);
+    }));
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn pumpkin_register_logger(cb: LogCallback) {
+    LOG_CALLBACK.store(cb as *mut (), Ordering::Relaxed);
+    
+    uwp_init_logger();
+    uwp_init_panic_hook();
+    
+    log::info!("Callback logger connected successfully.");
+}
+
+static FFI_COMMAND_SENDER: std::sync::OnceLock<mpsc::UnboundedSender<String>> = std::sync::OnceLock::new();
+
+async fn setup_ffi_console(server: Arc<Server>) {
+    let (tx, mut rx) = mpsc::unbounded_channel::<String>();
+    
+    let _ = FFI_COMMAND_SENDER.set(tx);
+
+    tokio::spawn(async move {
+        while !SHOULD_STOP.load(Ordering::Relaxed) {
+            if let Some(cmd) = rx.recv().await {
+                let source = command::CommandSender::Console;
+                let dispatcher = server.command_dispatcher.read().await;
+                dispatcher.handle_command(&source, &server, &cmd).await;
             }
         }
-    }));
+    });
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn pumpkin_inject_command(cmd_utf8: *const c_char) {
+    if cmd_utf8.is_null() { return; }
+    
+    let c_str = unsafe { CStr::from_ptr(cmd_utf8) };
+    if let Ok(cmd_str) = c_str.to_str() {
+        if let Some(tx) = FFI_COMMAND_SENDER.get() {
+            if let Err(e) = tx.send(cmd_str.to_string()) {
+                log::error!("Failed to inject FFI command: {}", e);
+            }
+        }
+    }
 }
 
 async fn uwp_run_server_loop(config_dir: &std::path::Path) -> i32 {
@@ -697,12 +714,9 @@ pub extern "C" fn pumpkin_run_from_config_dir(config_dir_utf8: *const c_char) ->
 
         let config_dir = std::path::PathBuf::from(config_dir_str);
 
-        uwp_init_logger(&config_dir);
-        uwp_init_panic_hook(); 
-        
+        uwp_init_logger(); 
+
         crate::data::set_data_root(config_dir.clone());
-        
-        log::info!("Pumpkin UWP Initialized.");
 
         let rt = match Runtime::new() {
             Ok(rt) => rt,
@@ -712,13 +726,12 @@ pub extern "C" fn pumpkin_run_from_config_dir(config_dir_utf8: *const c_char) ->
             }
         };
 
-        log::info!("Starting server loop...");
         rt.block_on(uwp_run_server_loop(&config_dir))
     });
 
     match result {
         Ok(code) => code,
-        Err(_) => -999, 
+        Err(_) => -999,
     }
 }
 
