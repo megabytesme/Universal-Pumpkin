@@ -1,0 +1,33 @@
+﻿<Page
+    x:Class="Universal_Pumpkin.ConsolePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    NavigationCacheMode="Required">
+
+    <Grid Padding="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Padding="10" Margin="0,0,0,10">
+            <Button x:Name="BtnStart" Content="Start Server" Click="BtnStart_Click"/>
+            <Button x:Name="BtnStop" Content="Stop Server" Click="BtnStop_Click" IsEnabled="False"/>
+            <TextBlock x:Name="TxtStatus" Text="Stopped" VerticalAlignment="Center" Margin="10,0,0,0"/>
+        </StackPanel>
+
+        <ScrollViewer x:Name="LogScroller" Grid.Row="1" Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" Padding="10">
+            <TextBlock x:Name="TxtLog" TextWrapping="Wrap" FontFamily="Consolas" FontSize="14" IsTextSelectionEnabled="True"/>
+        </ScrollViewer>
+
+        <Grid Grid.Row="2" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="BoxCommand" PlaceholderText="Enter command (op, gamemode...)" KeyDown="BoxCommand_KeyDown" IsEnabled="False"/>
+            <Button x:Name="BtnSend" Grid.Column="1" Content="Send" Click="BtnSend_Click" Margin="10,0,0,0" IsEnabled="False"/>
+        </Grid>
+    </Grid>
+</Page>
