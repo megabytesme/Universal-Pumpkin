@@ -1,0 +1,16 @@
+﻿<Page
+    x:Class="Universal_Pumpkin.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Universal_Pumpkin"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <StackPanel Padding="20" Margin="12">
+        <Button x:Name="StartPumpkinButton" Content="Start Pumpkin" Click="StartPumpkin_Click"/>
+        <Button Content="Stop Pumpkin" Click="StopPumpkin_Click"/>
+        <TextBlock x:Name="StatusText" Text="Idle"/>
+    </StackPanel>
+</Page>
