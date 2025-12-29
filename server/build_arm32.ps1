@@ -78,10 +78,11 @@ else {
 }
 
 # --- CONFIGURE BUILD ENVIRONMENT ---
-$SdkBase = "C:\Program Files (x86)\Windows Kits\10\Lib\10.0.10240.0"
+$SdkVer = "10.0.10240.0"
+$SdkBase = "C:\Program Files (x86)\Windows Kits\10\Lib\$SdkVer"
 
 if (-not (Test-Path $SdkBase)) {
-    Write-Error "Error: Windows SDK 10.0.10240.0 not found. Please install it via VS Installer."
+    Write-Error "Error: Windows SDK $SdkVer not found. Please install it via VS Installer."
     exit 1
 }
 
