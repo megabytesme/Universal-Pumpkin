@@ -85,7 +85,7 @@ namespace Universal_Pumpkin
             var restartDialog = new ContentDialog
             {
                 Title = "Restart app",
-                Content = "Due to limitations from Pumpkin, the app has to be restarted in order to start the server again. Would you like the app to close now?",
+                Content = "Due to limitations from Pumpkin, the app has to be restarted in order to start the server again. Would you like the app to restart now?",
                 PrimaryButtonText = "Yes",
                 SecondaryButtonText = "No"
             };
@@ -94,7 +94,7 @@ namespace Universal_Pumpkin
 
             if (result == ContentDialogResult.Primary)
             {
-                CoreApplication.Exit();
+                await CoreApplication.RequestRestartAsync("");
             }
         }
 
