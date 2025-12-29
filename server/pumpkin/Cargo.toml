@@ -61,7 +61,7 @@ rand = "=0.10.0-rc.5"
 num-bigint = "0.4"
 
 # Console line reading
-rustyline-async = "0.4.7"
+rustyline-async = { version = "0.4.7", optional = true } 
 
 # encryption
 rsa = { version = "=0.10.0-rc.10", features = ["sha1"] }
@@ -98,6 +98,7 @@ signature = "2.2.0"
 tempfile.workspace = true
 
 [features]
-build-binary = []
 console-subscriber = ["dep:console-subscriber"]
 tokio_taskdump = ["pumpkin-world/tokio_taskdump"]
+tty = ["dep:rustyline-async"]
+build-binary = ["tty"]

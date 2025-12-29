@@ -16,6 +16,7 @@ use pumpkin_macros::send_cancellable;
 use pumpkin_protocol::ConnectionState::Play;
 use pumpkin_util::permission::{PermissionManager, PermissionRegistry};
 use pumpkin_util::text::TextComponent;
+#[cfg(feature = "tty")]
 use rustyline_async::{Readline, ReadlineEvent};
 use std::collections::HashMap;
 use std::io::{Cursor, IsTerminal, stdin};
@@ -117,7 +118,8 @@ pub fn init_logger(advanced_config: &AdvancedConfiguration) {
                 )
             };
 
-        let (logger, rl): (Box<dyn SharedLogger + 'static>, _) = if advanced_config.commands.use_tty
+        #[cfg(feature = "tty")]
+        let (logger, rl): (Box<dyn SharedLogger + 'static>, Option<Readline>) = if advanced_config.commands.use_tty
             && stdin().is_terminal()
         {
             match Readline::new("$ ".to_owned()) {
@@ -133,7 +135,16 @@ pub fn init_logger(advanced_config: &AdvancedConfiguration) {
             (SimpleLogger::new(level, config.build()), None)
         };
 
-        Some((ReadlineLogWrapper::new(logger, file_logger, rl), level))
+        #[cfg(not(feature = "tty"))]
+        let logger: Box<dyn SharedLogger + 'static> = SimpleLogger::new(level, config.build());
+
+        #[cfg(feature = "tty")]
+        let wrapper = ReadlineLogWrapper::new(logger, file_logger, rl);
+
+        #[cfg(not(feature = "tty"))]
+        let wrapper = ReadlineLogWrapper::new(logger, file_logger);
+
+        Some((wrapper, level))
     } else {
         None
     };
@@ -186,12 +197,16 @@ impl PumpkinServer {
 
              if let Some(logger_opt) = LOGGER_IMPL.get() {
                 if let Some((wrapper, _)) = logger_opt {
+                    #[cfg(feature = "tty")]
                     if let Some(rl) = wrapper.take_readline() {
                         setup_console(rl, server.clone());
                     } else {
                         log::warn!("Falling back to simple logger (UWP warning: stdin is likely broken)");
                         setup_stdin_console(server.clone()).await;
                     }
+
+                    #[cfg(not(feature = "tty"))]
+                    setup_stdin_console(server.clone()).await;
                 }
              }
         }
@@ -343,6 +358,7 @@ impl PumpkinServer {
 
         if let Some(logger_opt) = LOGGER_IMPL.get() {
              if let Some((wrapper, _)) = logger_opt {
+                 #[cfg(feature = "tty")]
                  if let Some(rl) = wrapper.take_readline() {
                      let _ = rl;
                  }
@@ -511,6 +527,7 @@ async fn setup_stdin_console(server: Arc<Server>) {
     });
 }
 
+#[cfg(feature = "tty")]
 fn setup_console(rl: Readline, server: Arc<Server>) {
     // This needs to be async, or it will hog a thread.
     server.clone().spawn_task(async move {

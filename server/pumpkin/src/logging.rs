@@ -3,6 +3,7 @@
 
 use flate2::write::GzEncoder;
 use log::{LevelFilter, Log, Record};
+#[cfg(feature = "tty")]
 use rustyline_async::Readline;
 use simplelog::{CombinedLogger, Config, SharedLogger, WriteLogger};
 use std::fmt::format;
@@ -18,6 +19,7 @@ const MAX_ATTEMPTS: u32 = 100;
 /// properly flush logs to the output while they happen instead of batched
 pub struct ReadlineLogWrapper {
     internal: Box<CombinedLogger>,
+    #[cfg(feature = "tty")]
     readline: std::sync::Mutex<Option<Readline>>,
 }
 
@@ -209,15 +211,17 @@ impl ReadlineLogWrapper {
     pub fn new(
         log: Box<dyn SharedLogger + 'static>,
         file_logger: Option<Box<dyn SharedLogger + 'static>>,
-        rl: Option<Readline>,
+        #[cfg(feature = "tty")] rl: Option<Readline>,
     ) -> Self {
         let loggers: Vec<Option<Box<dyn SharedLogger + 'static>>> = vec![Some(log), file_logger];
         Self {
             internal: CombinedLogger::new(loggers.into_iter().flatten().collect()),
+            #[cfg(feature = "tty")]
             readline: std::sync::Mutex::new(rl),
         }
     }
 
+    #[cfg(feature = "tty")]
     pub fn take_readline(&self) -> Option<Readline> {
         self.readline
             .lock()
@@ -225,6 +229,7 @@ impl ReadlineLogWrapper {
     }
 
     // This isn't really dead code, just for some reason rust thinks that it might be.
+    #[cfg(feature = "tty")]
     #[allow(dead_code)]
     pub(crate) fn return_readline(&self, rl: Readline) {
         if let Ok(mut result) = self.readline.lock() {
@@ -238,6 +243,7 @@ impl ReadlineLogWrapper {
 impl Log for ReadlineLogWrapper {
     fn log(&self, record: &log::Record) {
         self.internal.log(record);
+        #[cfg(feature = "tty")]
         if let Ok(mut lock) = self.readline.lock()
             && let Some(rl) = lock.as_mut()
         {
@@ -247,6 +253,7 @@ impl Log for ReadlineLogWrapper {
 
     fn flush(&self) {
         self.internal.flush();
+        #[cfg(feature = "tty")]
         if let Ok(mut lock) = self.readline.lock()
             && let Some(rl) = lock.as_mut()
         {
