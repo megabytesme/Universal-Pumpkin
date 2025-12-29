@@ -8,6 +8,8 @@ $ErrorActionPreference = "Stop"
 # ARM64 requires a minimum SDK of 16299.
 $SdkVer = "10.0.16299.0" 
 $SdkBase = "C:\Program Files (x86)\Windows Kits\10\Lib\$SdkVer"
+$HybridDir = Join-Path $PWD "libs_arm64_temp"
+$BuildDir = Join-Path $PWD "target_arm64"
 
 if (-not (Test-Path $SdkBase)) {
     Write-Error "Error: Windows SDK $SdkVer not found. Please install it via VS Installer."
@@ -40,25 +42,18 @@ try {
 
     $env:LIB = "$HybridDir;$SdkBase\um\arm64;$SdkBase\ucrt\arm64"
 
-    # --- BUILD ---
-    Write-Host "Building Pumpkin (aarch64-uwp-windows-msvc - Release)..." -ForegroundColor Green
+    Write-Host "Building Pumpkin (ARM64)..." -ForegroundColor Green
     
     cargo +nightly build -Z "build-std=std,panic_abort" `
         --target aarch64-uwp-windows-msvc `
+        --target-dir $BuildDir `
         --release `
         --no-default-features
 
-    # --- REPORT DLL LOCATION ---
-    $DllPath = Join-Path $PWD "target\aarch64-uwp-windows-msvc\release\pumpkin.dll"
-
+    $DllPath = Join-Path $BuildDir "aarch64-uwp-windows-msvc\release\pumpkin.dll"
     if (Test-Path $DllPath) {
-        Write-Host "Build succeeded. DLL generated at:" -ForegroundColor Green
-        Write-Host "  $DllPath" -ForegroundColor Yellow
+        Write-Host "Build succeeded: $DllPath" -ForegroundColor Yellow
     }
-    else {
-        Write-Warning "Build completed but DLL not found at expected location."
-    }
-
 }
 catch {
     Write-Error "Build Failed: $_"

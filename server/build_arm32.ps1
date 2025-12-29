@@ -80,6 +80,8 @@ else {
 # --- CONFIGURE BUILD ENVIRONMENT ---
 $SdkVer = "10.0.10240.0"
 $SdkBase = "C:\Program Files (x86)\Windows Kits\10\Lib\$SdkVer"
+$HybridDir = Join-Path $PWD "libs_arm32_temp"
+$BuildDir = Join-Path $PWD "target_arm32"
 
 if (-not (Test-Path $SdkBase)) {
     Write-Error "Error: Windows SDK $SdkVer not found. Please install it via VS Installer."
@@ -121,30 +123,25 @@ try {
     $env:LIB = "$HybridDir;$SdkBase\um\arm;$SdkBase\ucrt\arm"
 
     # --- BUILD ---
-    Write-Host "Building Pumpkin (thumbv7a-uwp-windows-msvc - Release)..." -ForegroundColor Green
+    Write-Host "Building Pumpkin (ARM32)..." -ForegroundColor Green
     
     cargo +nightly build -Z "build-std=std,panic_abort" `
         --target thumbv7a-uwp-windows-msvc `
+        --target-dir $BuildDir `
         --release `
         --no-default-features
 
-    # --- REPORT DLL LOCATION ---
-    $DllPath = Join-Path $PWD "target\thumbv7a-uwp-windows-msvc\release\pumpkin.dll"
+    $DllPath = Join-Path $BuildDir "thumbv7a-uwp-windows-msvc\release\pumpkin.dll"
 
     if (Test-Path $DllPath) {
         Write-Host "Build succeeded. DLL generated at:" -ForegroundColor Green
         Write-Host "  $DllPath" -ForegroundColor Yellow
     }
-    else {
-        Write-Warning "Build completed but DLL not found at expected location."
-    }
-
 }
 catch {
     Write-Error "Build Failed: $_"
 }
 finally {
-    # --- CLEANUP ---
     if (Test-Path $HybridDir) {
         Write-Host "Cleaning up temporary libraries..." -ForegroundColor Gray
         Remove-Item -Path $HybridDir -Recurse -Force

@@ -158,3 +158,8 @@ spigot.yml
 version_history.json
 world_nether/
 world_the_end/
+
+target_arm32/
+target_arm64/
+target_x64/
+target_x86/

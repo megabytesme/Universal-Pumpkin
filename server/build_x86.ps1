@@ -7,6 +7,8 @@ $ErrorActionPreference = "Stop"
 # --- CONFIGURE BUILD ENVIRONMENT ---
 $SdkVer = "10.0.10240.0"
 $SdkBase = "C:\Program Files (x86)\Windows Kits\10\Lib\$SdkVer"
+$HybridDir = Join-Path $PWD "libs_x86_temp"
+$BuildDir = Join-Path $PWD "target_x86"
 
 if (-not (Test-Path $SdkBase)) {
     Write-Error "Error: Windows SDK $SdkVer not found. Please install it via VS Installer."
@@ -39,20 +41,18 @@ try {
 
     $env:LIB = "$HybridDir;$SdkBase\um\x86;$SdkBase\ucrt\x86"
 
-    # --- BUILD ---
-    Write-Host "Building Pumpkin (i686-uwp-windows-msvc - Release)..." -ForegroundColor Green
+    Write-Host "Building Pumpkin (x86)..." -ForegroundColor Green
     
     cargo +nightly build -Z "build-std=std,panic_abort" `
         --target i686-uwp-windows-msvc `
+        --target-dir $BuildDir `
         --release `
         --no-default-features
 
-    $DllPath = Join-Path $PWD "target\i686-uwp-windows-msvc\release\pumpkin.dll"
+    $DllPath = Join-Path $BuildDir "i686-uwp-windows-msvc\release\pumpkin.dll"
     if (Test-Path $DllPath) {
-        Write-Host "Build succeeded. DLL generated at:" -ForegroundColor Green
-        Write-Host "  $DllPath" -ForegroundColor Yellow
+        Write-Host "Build succeeded: $DllPath" -ForegroundColor Yellow
     }
-
 }
 catch {
     Write-Error "Build Failed: $_"
