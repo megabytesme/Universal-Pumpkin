@@ -169,7 +169,7 @@ namespace Universal_Pumpkin
                     var deleteCompleteDialog = new ContentDialog
                     {
                         Title = "World Files Deleted",
-                        Content = "It is recommended to restart the app. Would you like to exit now?",
+                        Content = "It is recommended to restart the app. Would you like to restart now?",
                         PrimaryButtonText = "Yes",
                         SecondaryButtonText = "No"
                     };
@@ -178,7 +178,7 @@ namespace Universal_Pumpkin
 
                     if (deleteCompleteResult == ContentDialogResult.Primary)
                     {
-                        CoreApplication.Exit();
+                        await CoreApplication.RequestRestartAsync("");
                     }
 
                     var btn = (Button)sender;
