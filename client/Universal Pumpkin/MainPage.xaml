@@ -5,13 +5,40 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource AppBackgroundAcrylic}">
 
-    <SplitView x:Name="RootSplitView" DisplayMode="CompactOverlay" IsPaneOpen="False" CompactPaneLength="48" OpenPaneLength="200">
+    <Page.Resources>
+        <AcrylicBrush x:Key="NavPaneAcrylic"
+                  BackgroundSource="HostBackdrop"
+                  TintColor="{ThemeResource SystemChromeMediumColor}"
+                  TintOpacity="0.6"
+                  FallbackColor="{ThemeResource SystemChromeMediumColor}" />
+
+        <Style x:Key="HamburgerButtonStyle" TargetType="Button" BasedOn="{StaticResource ButtonRevealStyle}">
+            <Setter Property="Width" Value="48"/>
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+    </Page.Resources>
+
+    <SplitView x:Name="RootSplitView"
+               DisplayMode="CompactOverlay"
+               IsPaneOpen="False"
+               CompactPaneLength="48"
+               OpenPaneLength="200">
+
         <SplitView.Pane>
-            <StackPanel Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}">
-                <Button x:Name="HamburgerButton" Width="48" Height="48" Click="HamburgerButton_Click" Background="Transparent">
-                    <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <StackPanel Background="{ThemeResource SystemControlAcrylicWindowBrush}">
+
+                <Button x:Name="HamburgerButton"
+                        Click="HamburgerButton_Click"
+                        Style="{StaticResource HamburgerButtonStyle}">
+                    <TextBlock Text="&#xE700;"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="20"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
                 </Button>
 
                 <ListBox x:Name="NavListBox" SelectionChanged="NavListBox_SelectionChanged" Background="Transparent">
@@ -32,7 +59,7 @@
         </SplitView.Pane>
 
         <SplitView.Content>
-            <Frame x:Name="ContentFrame" />
+            <Frame x:Name="ContentFrame"/>
         </SplitView.Content>
     </SplitView>
 </Page>

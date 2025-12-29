@@ -6,52 +6,105 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     NavigationCacheMode="Required"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource AppBackgroundAcrylic}">
 
-    <Grid>
+    <Grid Padding="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid x:Name="IpCard" Grid.Row="0" Margin="15,15,15,0" Visibility="Collapsed"
-              Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" Padding="15">
+        <Grid x:Name="IpCard"
+              Grid.Row="0"
+              Margin="0,0,0,12"
+              Visibility="Collapsed"
+              Background="{ThemeResource SystemControlAcrylicWindowBrush}"
+              Padding="12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            
-            <TextBlock Text="&#xEC27;" FontFamily="Segoe MDL2 Assets" FontSize="20" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="{ThemeResource SystemControlBackgroundAccentBrush}"/>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Padding="8" VerticalAlignment="Center">
+
+            <TextBlock Text="&#xEC27;"
+                       FontFamily="Segoe MDL2 Assets"
+                       FontSize="20"
+                       VerticalAlignment="Center"
+                       Margin="0,0,12,0"
+                       Foreground="{ThemeResource SystemControlBackgroundAccentBrush}"/>
+
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Center">
                 <TextBlock Text="Server IP:" Foreground="Gray"/>
-                <TextBlock x:Name="TxtIpAddress" Text="Loading..." FontWeight="Bold" IsTextSelectionEnabled="True" Margin="4,0,0,0"/>
+                <TextBlock x:Name="TxtIpAddress"
+                           Text="Loading..."
+                           FontWeight="Bold"
+                           IsTextSelectionEnabled="True"
+                           Margin="4,0,0,0"/>
             </StackPanel>
         </Grid>
 
-        <ScrollViewer x:Name="LogScroller" Grid.Row="1" Margin="15" Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}">
-            <TextBlock x:Name="TxtLog" TextWrapping="Wrap" FontFamily="Consolas" FontSize="14" IsTextSelectionEnabled="True"/>
+        <ScrollViewer x:Name="LogScroller"
+                      Grid.Row="1"
+                      Background="{ThemeResource SystemControlAcrylicWindowBrush}">
+            <TextBlock x:Name="TxtLog"
+                       TextWrapping="Wrap"
+                       FontFamily="Consolas"
+                       FontSize="14"
+                       IsTextSelectionEnabled="True"/>
         </ScrollViewer>
 
-        <Grid Grid.Row="2" Padding="15,0,15,12">
+        <Grid Grid.Row="2" Margin="0,12,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBox x:Name="BoxCommand" PlaceholderText="Enter command (op, gamemode...)" KeyDown="BoxCommand_KeyDown" IsEnabled="False"/>
-            <Button x:Name="BtnSend" Grid.Column="1" Content="Send" Click="BtnSend_Click" Margin="10,0,0,0" IsEnabled="False"/>
+
+            <TextBox x:Name="BoxCommand"
+                     PlaceholderText="Enter command (op, gamemode...)"
+                     KeyDown="BoxCommand_KeyDown"
+                     IsEnabled="False"/>
+
+            <Button x:Name="BtnSend"
+                    Grid.Column="1"
+                    Content="Send"
+                    Click="BtnSend_Click"
+                    Margin="12,0,0,0"
+                    IsEnabled="False"
+                    Style="{ThemeResource ButtonRevealStyle}"/>
         </Grid>
     </Grid>
 
     <Page.BottomAppBar>
-        <CommandBar>
+        <CommandBar Background="{ThemeResource SystemControlAcrylicWindowBrush}">
             <CommandBar.Content>
-                <TextBlock x:Name="TxtStatus" Text="Ready to Launch" VerticalAlignment="Center" Margin="14,14"/>
+                <TextBlock x:Name="TxtStatus"
+                           Text="Ready to Launch"
+                           VerticalAlignment="Center"
+                           Margin="14,14"/>
             </CommandBar.Content>
+
             <CommandBar.PrimaryCommands>
-                <AppBarButton x:Name="BtnStart" Label="Start Server" Icon="Play" Click="BtnStart_Click"/>
-                <AppBarButton x:Name="BtnStop" Label="Stop Server" Icon="Stop" Click="BtnStop_Click" Visibility="Collapsed"/>
-                <AppBarButton x:Name="BtnRestartApp" Label="Restart App" Icon="Refresh" Click="BtnRestartApp_Click" Visibility="Collapsed"/>
+                <AppBarButton x:Name="BtnStart"
+                              Label="Start Server"
+                              Icon="Play"
+                              Click="BtnStart_Click"
+                              Style="{ThemeResource AppBarButtonRevealStyle}"/>
+
+                <AppBarButton x:Name="BtnStop"
+                              Label="Stop Server"
+                              Icon="Stop"
+                              Click="BtnStop_Click"
+                              Visibility="Collapsed"
+                              Style="{ThemeResource AppBarButtonRevealStyle}"/>
+
+                <AppBarButton x:Name="BtnRestartApp"
+                              Label="Restart App"
+                              Icon="Refresh"
+                              Click="BtnRestartApp_Click"
+                              Visibility="Collapsed"
+                              Style="{ThemeResource AppBarButtonRevealStyle}"/>
             </CommandBar.PrimaryCommands>
         </CommandBar>
     </Page.BottomAppBar>
