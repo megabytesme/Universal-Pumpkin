@@ -1,21 +1,48 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
-using Windows.Foundation.Metadata;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Input;
+using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
 namespace Universal_Pumpkin
 {
     public sealed partial class ConsolePage : Page
     {
+        private DispatcherTimer _metricsTimer;
+
         public ConsolePage()
         {
             this.InitializeComponent();
+
+            _metricsTimer = new DispatcherTimer();
+            _metricsTimer.Interval = TimeSpan.FromSeconds(1);
+            _metricsTimer.Tick += MetricsTimer_Tick;
+        }
+
+        private async void MetricsTimer_Tick(object sender, object e)
+        {
+            if (App.Server.IsRunning)
+            {
+                ulong memUsage = MemoryManager.AppMemoryUsage / 1024 / 1024;
+                TxtRAM.Text = $"{memUsage} MB";
+
+                var metrics = await Task.Run(() => App.Server.GetMetrics());
+
+                if (metrics != null)
+                {
+                    TxtTPS.Text = metrics.FmtTPS;
+                    TxtTPS.Foreground = metrics.TPS >= 18.0
+                        ? new SolidColorBrush(Windows.UI.Colors.LightGreen)
+                        : new SolidColorBrush(Windows.UI.Colors.OrangeRed);
+
+                    TxtMSPT.Text = metrics.FmtMSPT;
+                }
+            }
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -23,13 +50,14 @@ namespace Universal_Pumpkin
             base.OnNavigatedTo(e);
 
             TxtLog.Text = App.Server.GetLogHistory();
-            // Try/Catch for scroll in case layout isn't ready
             try { LogScroller.ChangeView(null, LogScroller.ScrollableHeight, null); } catch { }
 
             App.Server.OnLogReceived += Controller_OnLogReceived;
             App.Server.OnServerStopped += Controller_OnServerStopped;
 
             UpdateUiState();
+
+            if (App.Server.IsRunning) _metricsTimer.Start();
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -37,6 +65,8 @@ namespace Universal_Pumpkin
             base.OnNavigatedFrom(e);
             App.Server.OnLogReceived -= Controller_OnLogReceived;
             App.Server.OnServerStopped -= Controller_OnServerStopped;
+
+            _metricsTimer.Stop();
         }
 
         private void UpdateUiState()
@@ -52,7 +82,7 @@ namespace Universal_Pumpkin
                 BtnSend.IsEnabled = true;
 
                 TxtStatus.Text = "Running";
-                IpCard.Visibility = Visibility.Visible;
+                StatusGrid.Visibility = Visibility.Visible;
                 TxtIpAddress.Text = IpAddressHelper.GetLocalIpAddress();
             }
             else
@@ -64,7 +94,7 @@ namespace Universal_Pumpkin
                 BoxCommand.IsEnabled = false;
                 BtnSend.IsEnabled = false;
 
-                IpCard.Visibility = Visibility.Collapsed;
+                StatusGrid.Visibility = Visibility.Collapsed;
                 if (string.IsNullOrEmpty(TxtStatus.Text)) TxtStatus.Text = "Ready";
             }
         }
@@ -90,16 +120,20 @@ namespace Universal_Pumpkin
             TxtLog.Text = "";
 
             TxtIpAddress.Text = IpAddressHelper.GetLocalIpAddress();
-            IpCard.Visibility = Visibility.Visible;
+            StatusGrid.Visibility = Visibility.Visible;
 
             await App.Server.StartServerAsync();
+
+            _metricsTimer.Start();
         }
 
         private async void Controller_OnServerStopped(object sender, int e)
         {
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                IpCard.Visibility = Visibility.Collapsed;
+                _metricsTimer.Stop();
+
+                StatusGrid.Visibility = Visibility.Collapsed;
                 BtnStop.Visibility = Visibility.Collapsed;
                 BtnStart.Visibility = Visibility.Collapsed;
                 BtnRestartApp.Visibility = Visibility.Visible;
