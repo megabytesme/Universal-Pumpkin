@@ -96,6 +96,15 @@ struct SerializedSuggestion {
     tooltip: Option<String>,
 }
 
+#[derive(Serialize)]
+struct SerializedMetrics {
+    tps: f32,
+    mspt: f32,
+    tick_count: i32,
+    loaded_chunks: usize,
+    player_count: usize,
+}
+
 //  LOGGING BRIDGE
 type LogCallback = extern "C" fn(*const c_char);
 
@@ -179,6 +188,46 @@ pub extern "C" fn pumpkin_get_players_json() -> *mut c_char {
         return CString::new(json).unwrap().into_raw();
     }
     CString::new("[]").unwrap().into_raw()
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn pumpkin_get_metrics_json() -> *mut c_char {
+    if let Some(server) = SERVER_INSTANCE.get() {
+        let (avg_ns, tick_count) = if let Ok(times) = server.tick_times_nanos.try_lock() {
+            let sum: i64 = times.iter().sum();
+            let count = times.len().max(1) as f64;
+            (sum as f64 / count, server.tick_count.load(Ordering::Relaxed))
+        } else {
+            (50_000_000.0, 0)
+        };
+
+        let mspt = avg_ns / 1_000_000.0;
+        let tps = (1_000_000_000.0 / avg_ns).min(20.0);
+
+        let mut loaded_chunks = 0;
+        let mut player_count = 0;
+        
+        if let Ok(worlds) = server.worlds.try_read() {
+            for world in worlds.iter() {
+                loaded_chunks += world.level.loaded_chunk_count();
+                if let Ok(p) = world.players.try_read() {
+                    player_count += p.len();
+                }
+            }
+        }
+
+        let metrics = SerializedMetrics {
+            tps: tps as f32,
+            mspt: mspt as f32,
+            tick_count,
+            loaded_chunks,
+            player_count,
+        };
+
+        let json = serde_json::to_string(&metrics).unwrap_or("{}".to_string());
+        return CString::new(json).unwrap().into_raw();
+    }
+    CString::new("{}").unwrap().into_raw()
 }
 
 #[unsafe(no_mangle)]
