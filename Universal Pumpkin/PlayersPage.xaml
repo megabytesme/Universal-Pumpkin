@@ -11,6 +11,35 @@
 
     <Page.Resources>
         <local:OpLevelToVisConverter x:Key="OpLevelToVisConverter"/>
+
+        <MenuFlyout x:Key="PlayerContextMenu">
+            <MenuFlyoutItem Text="Operator (OP)"
+                            Click="Menu_Op_Click"/>
+            <MenuFlyoutItem Text="De-Operator (Deop)"
+                            Click="Menu_Deop_Click"/>
+            <MenuFlyoutSeparator/>
+            <MenuFlyoutSubItem Text="Gamemode">
+                <MenuFlyoutItem Text="Survival"
+                                Click="Menu_Gm_Click"
+                                Tag="survival"/>
+                <MenuFlyoutItem Text="Creative"
+                                Click="Menu_Gm_Click"
+                                Tag="creative"/>
+                <MenuFlyoutItem Text="Spectator"
+                                Click="Menu_Gm_Click"
+                                Tag="spectator"/>
+                <MenuFlyoutItem Text="Adventure"
+                                Click="Menu_Gm_Click"
+                                Tag="adventure"/>
+            </MenuFlyoutSubItem>
+            <MenuFlyoutSeparator/>
+            <MenuFlyoutItem Text="Kick"
+                            Click="Menu_Kick_Click"/>
+            <MenuFlyoutItem Text="Ban Player"
+                            Click="Menu_Ban_Click"/>
+            <MenuFlyoutItem Text="Ban IP Address"
+                            Click="Menu_BanIp_Click"/>
+        </MenuFlyout>
     </Page.Resources>
 
     <Grid Background="Transparent">
@@ -19,12 +48,12 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Online Players" 
-                   Style="{StaticResource TitleTextBlockStyle}" 
-                   Margin="24,24,0,12" 
+        <TextBlock Text="Online Players"
+                   Style="{StaticResource TitleTextBlockStyle}"
+                   Margin="24,24,0,12"
                    Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
 
-        <GridView x:Name="PlayerGrid" 
+        <GridView x:Name="PlayerGrid"
                   Grid.Row="1"
                   Padding="12"
                   SelectionMode="None"
@@ -33,11 +62,15 @@
 
             <GridView.ItemTemplate>
                 <DataTemplate x:DataType="models:PlayerData">
-                    <Border Width="300" Height="110" 
-                            Background="{ThemeResource SystemControlAcrylicElementBrush}" 
-                            BorderBrush="#30FFFFFF" 
-                            BorderThickness="1" 
-                            Margin="6">
+                    <Border Width="300"
+                            Height="110"
+                            Background="{ThemeResource SystemControlAcrylicElementBrush}"
+                            BorderBrush="#30FFFFFF"
+                            BorderThickness="1"
+                            Margin="6"
+                            RightTapped="Player_RightTapped"
+                            Holding="Player_Holding"
+                            FlyoutBase.AttachedFlyout="{StaticResource PlayerContextMenu}">
 
                         <Grid Padding="12">
                             <Grid.ColumnDefinitions>
@@ -45,47 +78,56 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <StackPanel Grid.Column="0" VerticalAlignment="Top">
-                                <Border Width="48" Height="48" Background="#FF2D2D2D">
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Top">
+                                <Border Width="48"
+                                        Height="48"
+                                        Background="#FF2D2D2D">
                                     <Grid>
-                                        <Rectangle Fill="#FFB07F5E" Margin="4"/>
-                                        <TextBlock Text="{x:Bind Platform}" 
-                                                   FontSize="10" 
-                                                   HorizontalAlignment="Center" 
+                                        <Rectangle Fill="#FFB07F5E"
+                                                   Margin="4"/>
+                                        <TextBlock Text="{x:Bind Platform}"
+                                                   FontSize="10"
+                                                   HorizontalAlignment="Center"
                                                    VerticalAlignment="Bottom"
                                                    Foreground="White"
                                                    Margin="0,0,0,2"/>
                                     </Grid>
                                 </Border>
 
-                                <Border Background="#FFFF5555" Margin="0,4,0,0" Padding="2" 
+                                <Border Background="#FFFF5555"
+                                        Margin="0,4,0,0"
+                                        Padding="2"
                                         Visibility="{x:Bind PermissionLevel, Converter={StaticResource OpLevelToVisConverter}}">
-                                    <TextBlock Text="OP" 
-                                               FontSize="10" 
+                                    <TextBlock Text="OP"
+                                               FontSize="10"
                                                FontWeight="Bold"
-                                               Foreground="White" 
+                                               Foreground="White"
                                                HorizontalAlignment="Center"/>
                                 </Border>
 
-                                <Border Background="#FF555555" Margin="0,8,0,0" Padding="2">
-                                    <TextBlock Text="{x:Bind Gamemode}" 
-                                               FontSize="10" 
-                                               Foreground="#FFFFAA00" 
+                                <Border Background="#FF555555"
+                                        Margin="0,8,0,0"
+                                        Padding="2">
+                                    <TextBlock Text="{x:Bind Gamemode}"
+                                               FontSize="10"
+                                               Foreground="#FFFFAA00"
                                                HorizontalAlignment="Center"/>
                                 </Border>
                             </StackPanel>
 
-                            <StackPanel Grid.Column="1" Margin="12,0,0,0">
-                                <TextBlock Text="{x:Bind Username}" 
-                                           FontSize="18" 
-                                           FontWeight="SemiBold" 
+                            <StackPanel Grid.Column="1"
+                                        Margin="12,0,0,0">
+                                <TextBlock Text="{x:Bind Username}"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
                                            Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
                                            TextTrimming="CharacterEllipsis"/>
 
-                                <TextBlock Text="{x:Bind Uuid}" 
-                                           FontSize="10" 
-                                           Foreground="Gray" 
-                                           TextTrimming="CharacterEllipsis" 
+                                <TextBlock Text="{x:Bind Uuid}"
+                                           FontSize="10"
+                                           Foreground="Gray"
+                                           TextTrimming="CharacterEllipsis"
                                            Opacity="0.7"/>
 
                                 <Grid Margin="0,8,0,0">
@@ -94,30 +136,50 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <StackPanel Orientation="Horizontal" Grid.Column="0">
-                                        <TextBlock Text="♥" Foreground="#FFFF5555" Margin="0,0,4,0"/>
-                                        <TextBlock Text="{x:Bind Health}" Foreground="#FFFF5555"/>
+                                    <StackPanel Orientation="Horizontal"
+                                                Grid.Column="0">
+                                        <TextBlock Text="♥"
+                                                   Foreground="#FFFF5555"
+                                                   Margin="0,0,4,0"/>
+                                        <TextBlock Text="{x:Bind Health}"
+                                                   Foreground="#FFFF5555"/>
                                     </StackPanel>
 
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <StackPanel Grid.Column="1"
+                                                VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="✳" Foreground="#FF55FF55" Margin="0,0,4,0"/>
-                                            <TextBlock Text="{x:Bind ExpLevel}" Foreground="#FF55FF55" FontWeight="Bold"/>
+                                            <TextBlock Text="✳"
+                                                       Foreground="#FF55FF55"
+                                                       Margin="0,0,4,0"/>
+                                            <TextBlock Text="{x:Bind ExpLevel}"
+                                                       Foreground="#FF55FF55"
+                                                       FontWeight="Bold"/>
                                         </StackPanel>
-                                        
-                                        <ProgressBar Value="{x:Bind ExpProgress}" Maximum="1.0" 
-                                                     Height="4" Foreground="#FF55FF55" 
-                                                     Background="#3355FF55" Margin="0,2,0,0"/>
+
+                                        <ProgressBar Value="{x:Bind ExpProgress}"
+                                                     Maximum="1.0"
+                                                     Height="4"
+                                                     Foreground="#FF55FF55"
+                                                     Background="#3355FF55"
+                                                     Margin="0,2,0,0"/>
                                     </StackPanel>
                                 </Grid>
 
-                                <TextBlock FontSize="11" Margin="0,4,0,0" FontFamily="Consolas">
-                                    <Run Text="X:" Foreground="Gray"/>
-                                    <Run Text="{x:Bind Position.FmtX}" Foreground="White"/>
-                                    <Run Text=" Y:" Foreground="Gray"/>
-                                    <Run Text="{x:Bind Position.FmtY}" Foreground="White"/>
-                                    <Run Text=" Z:" Foreground="Gray"/>
-                                    <Run Text="{x:Bind Position.FmtZ}" Foreground="White"/>
+                                <TextBlock FontSize="11"
+                                           Margin="0,4,0,0"
+                                           FontFamily="Consolas">
+                                    <Run Text="X:"
+                                         Foreground="Gray"/>
+                                    <Run Text="{x:Bind Position.FmtX}"
+                                         Foreground="White"/>
+                                    <Run Text="Y:"
+                                         Foreground="Gray"/>
+                                    <Run Text="{x:Bind Position.FmtY}"
+                                         Foreground="White"/>
+                                    <Run Text="Z:"
+                                         Foreground="Gray"/>
+                                    <Run Text="{x:Bind Position.FmtZ}"
+                                         Foreground="White"/>
                                 </TextBlock>
                             </StackPanel>
                         </Grid>
