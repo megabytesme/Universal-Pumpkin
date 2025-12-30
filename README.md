@@ -228,7 +228,7 @@ When synchronizing the Pumpkin server core into the `/server` directory, you mus
 After completing the upstream sync, open:
 
 ```
-client/Universal_Pumpkin.Shared/Views/SettingsPage.xaml.cs
+client/Universal_Pumpkin.Shared/ViewModels/SettingsViewModel.cs
 ```
 
 and update the following helper methods:
@@ -237,7 +237,6 @@ and update the following helper methods:
 - `GetMinecraftVersion()`  
 - `GetProtocolVersion()`  
 - `GetPumpkinCommitId()`  
-- `GetPumpkinCommitUri()`
 
 These should reflect the **exact upstream commit** you pulled into `/server`, along with the corresponding Pumpkin, Minecraft, and protocol versions (these can be sourced via running the `pumpkin` command in the server).
 
