@@ -1,5 +1,6 @@
 ﻿using System;
 using Windows.ApplicationModel.Core;
+using Windows.Foundation.Metadata;
 using Windows.Storage;
 using Windows.System;
 using Windows.UI.Xaml;
@@ -21,7 +22,7 @@ namespace Universal_Pumpkin
         private async void LoadAll()
         {
             _loading = true;
-            
+
             await BindToggle(SwJava, "", "java_edition");
             await BindText(TxtJavaAddr, "", "java_edition_address");
             await BindToggle(SwBedrock, "", "bedrock_edition");
@@ -46,7 +47,7 @@ namespace Universal_Pumpkin
             await BindToggle(SwWhite, "", "white_list");
             await BindToggle(SwEnforceWhite, "", "enforce_whitelist");
             await BindToggle(SwChatReport, "", "allow_chat_reports");
-            
+
             await BindFeature(SwLan);
             await BindFeature(SwQuery);
 
@@ -59,18 +60,17 @@ namespace Universal_Pumpkin
             _loading = false;
         }
 
+        // ... Bind helpers ...
         private async System.Threading.Tasks.Task BindToggle(ToggleSwitch ts, string section, string key)
         {
             string val = await ConfigHelper.GetValueAsync(section, key);
             if (bool.TryParse(val, out bool b)) ts.IsOn = b;
         }
-
         private async System.Threading.Tasks.Task BindText(TextBox tb, string section, string key)
         {
             string val = await ConfigHelper.GetValueAsync(section, key);
             if (val != null) tb.Text = val;
         }
-
         private async System.Threading.Tasks.Task BindCombo(ComboBox cb, string section, string key)
         {
             string val = await ConfigHelper.GetValueAsync(section, key);
@@ -79,12 +79,10 @@ namespace Universal_Pumpkin
             {
                 if (item.Content.ToString().Equals(val, StringComparison.OrdinalIgnoreCase))
                 {
-                    cb.SelectedItem = item;
-                    break;
+                    cb.SelectedItem = item; break;
                 }
             }
         }
-
         private async System.Threading.Tasks.Task BindFeature(ToggleSwitch ts)
         {
             string[] parts = ts.Tag.ToString().Split('|');
@@ -95,48 +93,38 @@ namespace Universal_Pumpkin
             }
         }
 
+        // ... Event Handlers ...
         private async void Setting_Toggled(object sender, RoutedEventArgs e)
         {
             if (_loading) return;
             var c = (ToggleSwitch)sender;
             await ConfigHelper.SaveValueAsync("", c.Tag.ToString(), c.IsOn.ToString().ToLower());
         }
-
         private async void Feature_Toggled(object sender, RoutedEventArgs e)
         {
             if (_loading) return;
             var c = (ToggleSwitch)sender;
             string[] parts = c.Tag.ToString().Split('|');
-            if (parts.Length == 2)
-            {
-                await ConfigHelper.SaveValueAsync(parts[0], parts[1], c.IsOn.ToString().ToLower());
-            }
+            if (parts.Length == 2) await ConfigHelper.SaveValueAsync(parts[0], parts[1], c.IsOn.ToString().ToLower());
         }
-
         private async void Setting_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (_loading) return;
             var c = (TextBox)sender;
             await ConfigHelper.SaveValueAsync("", c.Tag.ToString(), c.Text);
         }
-
         private async void Setting_ComboChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_loading) return;
             var c = (ComboBox)sender;
-            if (c.SelectedItem is ComboBoxItem item)
-            {
-                await ConfigHelper.SaveValueAsync("", c.Tag.ToString(), item.Content.ToString());
-            }
+            if (c.SelectedItem is ComboBoxItem item) await ConfigHelper.SaveValueAsync("", c.Tag.ToString(), item.Content.ToString());
         }
-
         private async void SldView_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
             if (_loading) return;
             TxtViewVal.Text = e.NewValue.ToString();
             await ConfigHelper.SaveValueAsync("", "view_distance", e.NewValue.ToString());
         }
-
         private async void SldSim_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
             if (_loading) return;
@@ -146,6 +134,12 @@ namespace Universal_Pumpkin
 
         private async void BtnReset_Click(object sender, RoutedEventArgs e)
         {
+#if UWP1709
+            bool canRestart = true;
+#else
+            bool canRestart = false;
+#endif
+
             var deleteDialog = new ContentDialog
             {
                 Title = "Delete World Files",
@@ -154,11 +148,10 @@ namespace Universal_Pumpkin
                 SecondaryButtonText = "No"
             };
 
-            ContentDialogResult deleteResult = await deleteDialog.ShowAsync();
-
-            if (deleteResult == ContentDialogResult.Primary)
+            if (await deleteDialog.ShowAsync() == ContentDialogResult.Primary)
             {
                 var folder = ApplicationData.Current.LocalFolder;
+
                 try
                 {
                     try { var w = await folder.GetFolderAsync("world"); await w.DeleteAsync(); } catch { }
@@ -169,20 +162,22 @@ namespace Universal_Pumpkin
                     var deleteCompleteDialog = new ContentDialog
                     {
                         Title = "World Files Deleted",
-                        Content = "It is recommended to restart the app. Would you like to exit now?",
+                        Content = canRestart ? "Restart now?" : "Close app now?",
                         PrimaryButtonText = "Yes",
                         SecondaryButtonText = "No"
                     };
 
-                    ContentDialogResult deleteCompleteResult = await deleteCompleteDialog.ShowAsync();
-
-                    if (deleteCompleteResult == ContentDialogResult.Primary)
+                    if (await deleteCompleteDialog.ShowAsync() == ContentDialogResult.Primary)
                     {
+#if UWP1709
+                        await CoreApplication.RequestRestartAsync("");
+#else
                         CoreApplication.Exit();
+#endif
                     }
 
                     var btn = (Button)sender;
-                    btn.Content = "Data Deleted! Restart App.";
+                    btn.Content = "Data Deleted!";
                     btn.IsEnabled = false;
                 }
                 catch (Exception ex)

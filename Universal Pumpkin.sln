@@ -7,7 +7,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Universal Pumpkin", "Univer
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Universal Pumpkin (1507)", "Universal Pumpkin (1507)\Universal Pumpkin (1507).csproj", "{AA279C37-CD15-490A-970D-8DD0666EFDF3}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Universal_Pumpkin.Shared", "Universal_Pumpkin.Shared\Universal_Pumpkin.Shared.shproj", "{8F44DE68-CEA2-4EDD-B0BE-EB5F7A3D74CF}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Universal_Pumpkin.Shared\Universal_Pumpkin.Shared.projitems*{12fd4bbf-2e2c-4e04-834b-7f2995a5d319}*SharedItemsImports = 4
+		Universal_Pumpkin.Shared\Universal_Pumpkin.Shared.projitems*{8f44de68-cea2-4edd-b0be-eb5f7a3d74cf}*SharedItemsImports = 13
+		Universal_Pumpkin.Shared\Universal_Pumpkin.Shared.projitems*{aa279c37-cd15-490a-970d-8dd0666efdf3}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
 		Debug|ARM64 = Debug|ARM64

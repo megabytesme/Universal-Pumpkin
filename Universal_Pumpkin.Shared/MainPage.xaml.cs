@@ -26,6 +26,9 @@ namespace Universal_Pumpkin
                     case "Console":
                         ContentFrame.Navigate(typeof(ConsolePage));
                         break;
+                    case "Players":
+                        ContentFrame.Navigate(typeof(PlayersPage));
+                        break;
                     case "Settings":
                         ContentFrame.Navigate(typeof(SettingsPage));
                         break;

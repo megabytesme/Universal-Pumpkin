@@ -1,23 +1,71 @@
 ﻿using System;
 using Windows.ApplicationModel.Core;
+using Windows.Foundation.Metadata;
 using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
+using Windows.UI.Xaml.Navigation;
 
 namespace Universal_Pumpkin
 {
     public sealed partial class ConsolePage : Page
     {
-        public static PumpkinController Controller = new PumpkinController();
-
         public ConsolePage()
         {
             this.InitializeComponent();
+        }
 
-            Controller.OnLogReceived += Controller_OnLogReceived;
-            Controller.OnServerStopped += Controller_OnServerStopped;
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            TxtLog.Text = App.Server.GetLogHistory();
+            // Try/Catch for scroll in case layout isn't ready
+            try { LogScroller.ChangeView(null, LogScroller.ScrollableHeight, null); } catch { }
+
+            App.Server.OnLogReceived += Controller_OnLogReceived;
+            App.Server.OnServerStopped += Controller_OnServerStopped;
+
+            UpdateUiState();
+        }
+
+        protected override void OnNavigatedFrom(NavigationEventArgs e)
+        {
+            base.OnNavigatedFrom(e);
+            App.Server.OnLogReceived -= Controller_OnLogReceived;
+            App.Server.OnServerStopped -= Controller_OnServerStopped;
+        }
+
+        private void UpdateUiState()
+        {
+            if (App.Server.IsRunning)
+            {
+                BtnStart.Visibility = Visibility.Collapsed;
+                BtnRestartApp.Visibility = Visibility.Collapsed;
+                BtnStop.Visibility = Visibility.Visible;
+                BtnStop.IsEnabled = true;
+
+                BoxCommand.IsEnabled = true;
+                BtnSend.IsEnabled = true;
+
+                TxtStatus.Text = "Running";
+                IpCard.Visibility = Visibility.Visible;
+                TxtIpAddress.Text = IpAddressHelper.GetLocalIpAddress();
+            }
+            else
+            {
+                BtnStart.Visibility = Visibility.Visible;
+                BtnStop.Visibility = Visibility.Collapsed;
+                BtnRestartApp.Visibility = Visibility.Collapsed;
+
+                BoxCommand.IsEnabled = false;
+                BtnSend.IsEnabled = false;
+
+                IpCard.Visibility = Visibility.Collapsed;
+                if (string.IsNullOrEmpty(TxtStatus.Text)) TxtStatus.Text = "Ready";
+            }
         }
 
         private async void BtnStart_Click(object sender, RoutedEventArgs e)
@@ -43,7 +91,7 @@ namespace Universal_Pumpkin
             TxtIpAddress.Text = IpAddressHelper.GetLocalIpAddress();
             IpCard.Visibility = Visibility.Visible;
 
-            await Controller.StartServerAsync();
+            await App.Server.StartServerAsync();
         }
 
         private async void Controller_OnServerStopped(object sender, int e)
@@ -51,7 +99,6 @@ namespace Universal_Pumpkin
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
                 IpCard.Visibility = Visibility.Collapsed;
-
                 BtnStop.Visibility = Visibility.Collapsed;
                 BtnStart.Visibility = Visibility.Collapsed;
                 BtnRestartApp.Visibility = Visibility.Visible;
@@ -77,15 +124,23 @@ namespace Universal_Pumpkin
         {
             BtnStop.IsEnabled = false;
             TxtStatus.Text = "Stopping...";
-            Controller.StopServer();
+            App.Server.StopServer();
         }
 
         private async void BtnRestartApp_Click(object sender, RoutedEventArgs e)
         {
+#if UWP1709
+            bool canRestart = true;
+#else
+            bool canRestart = false;
+#endif
+
             var restartDialog = new ContentDialog
             {
                 Title = "Restart app",
-                Content = "Due to limitations from Pumpkin, the app has to be restarted in order to start the server again. Would you like the app to restart now?",
+                Content = canRestart
+                    ? "Due to limitations, the app must restart to run the server again. Restart now?"
+                    : "Due to limitations, the app must close to run the server again. Close now?",
                 PrimaryButtonText = "Yes",
                 SecondaryButtonText = "No"
             };
@@ -94,7 +149,11 @@ namespace Universal_Pumpkin
 
             if (result == ContentDialogResult.Primary)
             {
+#if UWP1709
                 await CoreApplication.RequestRestartAsync("");
+#else
+                CoreApplication.Exit();
+#endif
             }
         }
 
@@ -102,7 +161,7 @@ namespace Universal_Pumpkin
         {
             if (!string.IsNullOrWhiteSpace(BoxCommand.Text))
             {
-                Controller.SendCommand(BoxCommand.Text);
+                App.Server.SendCommand(BoxCommand.Text);
                 TxtLog.Text += $"> {BoxCommand.Text}\n";
                 BoxCommand.Text = "";
                 BoxCommand.Focus(FocusState.Programmatic);
