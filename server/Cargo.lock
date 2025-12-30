@@ -2275,6 +2275,8 @@ dependencies = [
  "log",
  "pumpkin",
  "pumpkin-config",
+ "pumpkin-protocol",
+ "pumpkin-util",
  "serde",
  "serde_json",
  "tokio",

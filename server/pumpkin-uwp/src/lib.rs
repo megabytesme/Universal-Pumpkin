@@ -2,6 +2,8 @@ use pumpkin::server::Server;
 use pumpkin::PumpkinServer;
 use pumpkin::entity::player::Player;
 use pumpkin::net::ClientPlatform;
+use pumpkin::command::CommandSender;
+use pumpkin_protocol::java::client::play::CommandSuggestion;
 use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
@@ -86,6 +88,12 @@ impl SerializedPlayer {
             is_sprinting: entity.sprinting.load(Ordering::Relaxed),
         }
     }
+}
+
+#[derive(Serialize)]
+struct SerializedSuggestion {
+    text: String,
+    tooltip: Option<String>,
 }
 
 //  LOGGING BRIDGE
@@ -174,11 +182,66 @@ pub extern "C" fn pumpkin_get_players_json() -> *mut c_char {
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn pumpkin_get_completions_json(input_utf8: *const c_char) -> *mut c_char {
+    if input_utf8.is_null() { return CString::new("[]").unwrap().into_raw(); }
+    
+    if let Some(server) = SERVER_INSTANCE.get() {
+        let server_ref = server.clone();
+        
+        let c_str = unsafe { CStr::from_ptr(input_utf8) };
+        let full_input = match c_str.to_str() {
+            Ok(s) => s.to_string(),
+            Err(_) => return CString::new("[]").unwrap().into_raw(),
+        };
+
+        if let Some(rt) = RUNTIME.get() {
+            let suggestions = rt.block_on(async move {
+                let dispatcher = server_ref.command_dispatcher.read().await;
+                
+                if !full_input.contains(' ') {
+                    let mut matches = Vec::new();
+                    for key in dispatcher.commands.keys() {
+                        if key.starts_with(&full_input) {
+                            matches.push(CommandSuggestion {
+                                suggestion: key.clone(),
+                                tooltip: None 
+                            });
+                        }
+                    }
+                    return matches;
+                }
+
+                let src = CommandSender::Console; 
+                
+                let query = if full_input.ends_with(' ') {
+                    full_input.clone() 
+                } else {
+                    full_input.clone()
+                };
+
+                dispatcher.find_suggestions(&src, &server_ref, &query).await
+            });
+
+            let results: Vec<SerializedSuggestion> = suggestions.into_iter().map(|s| {
+                SerializedSuggestion {
+                    text: s.suggestion,
+                    tooltip: s.tooltip.map(|t| t.get_text()), 
+                }
+            }).collect();
+
+            let json = serde_json::to_string(&results).unwrap_or("[]".to_string());
+            return CString::new(json).unwrap().into_raw();
+        }
+    }
+    CString::new("[]").unwrap().into_raw()
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn pumpkin_inject_command(cmd_utf8: *const c_char) {
     if cmd_utf8.is_null() { return; }
     
     if let Some(server) = SERVER_INSTANCE.get() {
-        let server_ref: Arc<Server> = server.clone();
+        let server_ref = server.clone();
         
         let c_str = unsafe { CStr::from_ptr(cmd_utf8) };
         if let Ok(cmd_str) = c_str.to_str() {
@@ -253,6 +316,8 @@ pub unsafe extern "C" fn pumpkin_request_stop() {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn pumpkin_free_string(s: *mut c_char) {
     if !s.is_null() {
-        let _ = CString::from_raw(s);
+        unsafe {
+            let _ = CString::from_raw(s);
+        }
     }
 }
