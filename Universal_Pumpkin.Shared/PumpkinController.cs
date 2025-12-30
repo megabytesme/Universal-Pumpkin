@@ -10,7 +10,7 @@ namespace Universal_Pumpkin
 {
     public class PumpkinController
     {
-        private const string DllName = "pumpkin.dll";
+        private const string DllName = "pumpkin_uwp.dll";
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void LogCallback(IntPtr message);
