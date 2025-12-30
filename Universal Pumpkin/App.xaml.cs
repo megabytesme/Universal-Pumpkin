@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Universal_Pumpkin.Services;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
@@ -43,6 +44,23 @@ namespace Universal_Pumpkin
         /// <param name="e">Details about the launch request and process.</param>
         protected override void OnLaunched(LaunchActivatedEventArgs e)
         {
+            if (OSHelper.IsWindows11)
+            {
+                try
+                {
+                    var win11Dict = new ResourceDictionary
+                    {
+                        Source = new Uri("ms-appx:///Themes/Win11Resources.xaml")
+                    };
+
+                    this.Resources.MergedDictionaries.Add(win11Dict);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to load WinUI resources: {ex.Message}");
+                }
+            }
+
             Frame rootFrame = Window.Current.Content as Frame;
 
             // Do not repeat app initialization when the Window already has content,
@@ -70,7 +88,8 @@ namespace Universal_Pumpkin
                     // When the navigation stack isn't restored navigate to the first page,
                     // configuring the new page by passing required information as a navigation
                     // parameter
-                    rootFrame.Navigate(typeof(MainPage), e.Arguments);
+                    Type shellType = NavigationHelper.GetPageType("Shell");
+                    rootFrame.Navigate(shellType, e.Arguments);
                 }
                 // Ensure the current window is active
                 Window.Current.Activate();

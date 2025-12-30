@@ -1,5 +1,8 @@
 ﻿using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+#if UWP1709
+using Universal_Pumpkin.Services;
+#endif
 
 namespace Universal_Pumpkin
 {
@@ -21,6 +24,23 @@ namespace Universal_Pumpkin
             if (NavListBox.SelectedItem is ListBoxItem item)
             {
                 string tag = item.Tag.ToString();
+#if UWP1709
+                System.Type pageType = null;
+
+                try
+                {
+                    pageType = NavigationHelper.GetPageType(tag);
+                }
+                catch (System.ArgumentException)
+                {
+                    return;
+                }
+
+                if (pageType != null)
+                {
+                    ContentFrame.Navigate(pageType);
+                }
+#else
                 switch (tag)
                 {
                     case "Console":
@@ -33,6 +53,7 @@ namespace Universal_Pumpkin
                         ContentFrame.Navigate(typeof(SettingsPage));
                         break;
                 }
+#endif
             }
         }
     }

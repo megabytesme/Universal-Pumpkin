@@ -1,31 +1,30 @@
 ﻿<Application
     x:Class="Universal_Pumpkin.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Universal_Pumpkin">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
                     <AcrylicBrush x:Key="AppBackgroundAcrylic"
-                          BackgroundSource="HostBackdrop"
-                          TintColor="#FFFFFF"
-                          TintOpacity="0.5"
-                          FallbackColor="#F2F2F2" />
+                                  BackgroundSource="HostBackdrop"
+                                  TintColor="#FFFFFF"
+                                  TintOpacity="0.5"
+                                  FallbackColor="#F2F2F2"/>
                 </ResourceDictionary>
 
                 <ResourceDictionary x:Key="Dark">
                     <AcrylicBrush x:Key="AppBackgroundAcrylic"
-                          BackgroundSource="HostBackdrop"
-                          TintColor="#202020"
-                          TintOpacity="0.6"
-                          FallbackColor="#202020" />
+                                  BackgroundSource="HostBackdrop"
+                                  TintColor="#202020"
+                                  TintOpacity="0.6"
+                                  FallbackColor="#202020"/>
                 </ResourceDictionary>
 
                 <ResourceDictionary x:Key="HighContrast">
                     <SolidColorBrush x:Key="AppBackgroundAcrylic"
-                             Color="{ThemeResource SystemColorWindowColor}" />
+                                     Color="{ThemeResource SystemColorWindowColor}"/>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
