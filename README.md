@@ -143,6 +143,84 @@ This project is a downstream port of the **[Pumpkin](https://github.com/Pumpkin-
 *   **General Server Logic:** If you are fixing a bug in the Minecraft protocol, adding a game feature or optimizing chunk loading for example, please submit your Pull Request to the **[official Pumpkin repository](https://github.com/Pumpkin-MC/Pumpkin)** first (whilst ensuring to follow their [contribution guidelines](https://github.com/Pumpkin-MC/Pumpkin/blob/master/CONTRIBUTING.md)). I intend to sync with upstream regularly.
 *   **UWP Specifics:** If your change is related to the UWP host application, the FFI bridge, any build scripts, or optimising dependencies to better suit UWP, please submit your Pull Request here.
 
+# **Bringing in Changes From Upstream**
+
+This workflow syncs the upstream Pumpkin repository into your `/server` subfolder using `git subtree`.
+
+## **1. Add and Fetch Upstream**
+
+```bash
+git remote add upstream https://github.com/Pumpkin-MC/Pumpkin.git
+git fetch upstream
+```
+
+## **2. Create a Working Branch**
+
+```bash
+git checkout -b update-pumpkin-server
+```
+
+## **3. Pull Upstream Into the `/server` Subfolder**
+
+```bash
+git subtree pull --prefix server upstream master
+```
+
+Resolve any merge conflicts if they appear.
+
+## **4. Rebuild Pumpkin (UWP-Compatible Targets)**
+
+```bash
+cargo clean
+.\build_arm32.ps1
+```
+
+*(Or build/test any other architecture as needed.)*
+
+## **5. Stage and Commit the Merge**
+
+```bash
+git status
+git add .
+git commit
+```
+
+If Git opens an editor for the commit message, **leave it blank**.
+
+
+## **6. Merge Into `master` With a Merge Commit**
+
+```bash
+git checkout master
+git merge --no-ff update-pumpkin-server
+```
+
+## **7. Commit Message Template**
+
+Use this exact structure for the merge commit:
+
+```
+Server: Update Pumpkin Server (Sync with Upstream UPSTREAM COMMIT ID)
+
+Synchronised the local /server directory with the official Pumpkin-MC/Pumpkin repository (Master).
+
+Key Integration Changes for UWP:
+- Only include brief details on required changes made. Otherwise remove this section.
+
+Upstream Changelog:
+-------------------
+1. example: issuelabel (#issue number) - user1
+   * summary 1
+   * summary 2
+   * summary 3
+
+2. example: issuelabel (#issue number) - user2
+   * summary 1
+   * summary 2
+   * summary 3
+   * summary 4
+```
+
 ## License
 
 This project operates under a dual-license structure:
