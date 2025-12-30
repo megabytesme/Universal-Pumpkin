@@ -403,13 +403,25 @@ namespace Universal_Pumpkin
                         new LineBreak(),
                         new Run() { Text = $"Version {GetAppVersion()} ({GetAppName()})" },
                         new LineBreak(),
-                        new Run() { Text = "Pumpkin 0.1.0-dev+1.21.11" },
+                        
+                        new Run() { Text = $"Pumpkin {GetPumpkinVersion()}" },
                         new LineBreak(),
-                        new Run() { Text = "(Minecraft 1.21.11, Protocol 774)" },
+                        new Run() { Text = $"(Minecraft {GetMinecraftVersion()}, Protocol {GetProtocolVersion()})" },
                         new LineBreak(),
+
+                        new Run() { Text = "Server Commit: " },
+                        new Hyperlink()
+                        {
+                            NavigateUri = GetPumpkinCommitUri(),
+                            Inlines = { new Run() { Text = GetPumpkinCommitId() } }
+                        },
+                        new LineBreak(),
+                        new LineBreak(),
+
                         new Run() { Text = "Copyright © 2025 MegaBytesMe" },
                         new LineBreak(),
                         new LineBreak(),
+
                         new Run() { Text = "Universal Pumpkin is a native, high-performance Minecraft server wrapper for UWP. It brings the power of the Rust-based " },
                         new Hyperlink()
                         {
@@ -419,6 +431,7 @@ namespace Universal_Pumpkin
                         new Run() { Text = " engine to devices supporting the Universal Windows Platform (UWP)." },
                         new LineBreak(),
                         new LineBreak(),
+
                         new Run() { Text = "Source code available on " },
                         new Hyperlink()
                         {
@@ -426,6 +439,7 @@ namespace Universal_Pumpkin
                             Inlines = { new Run() { Text = "GitHub" } },
                         },
                         new LineBreak(),
+
                         new Run() { Text = "Found a bug? Report it here: " },
                         new Hyperlink()
                         {
@@ -434,6 +448,7 @@ namespace Universal_Pumpkin
                         },
                         new LineBreak(),
                         new LineBreak(),
+
                         new Run() { Text = "Like what you see? Consider supporting me on " },
                         new Hyperlink()
                         {
@@ -442,6 +457,7 @@ namespace Universal_Pumpkin
                         },
                         new LineBreak(),
                         new LineBreak(),
+
                         new Hyperlink()
                         {
                             NavigateUri = new Uri("https://github.com/megabytesme/Universal-Pumpkin/blob/master/LICENSE.md"),
@@ -502,5 +518,13 @@ namespace Universal_Pumpkin
             return "2.0.0.0";
 #endif
         }
+
+        private string GetPumpkinVersion() => "0.1.0-dev+1.21.11";
+        private string GetMinecraftVersion() => "1.21.11";
+        private int GetProtocolVersion() => 774;
+        private string GetPumpkinCommitId() =>
+            "70b31323967bb99fd4feefab8e96124be369cd6f";
+        private Uri GetPumpkinCommitUri() =>
+            new Uri("https://github.com/Pumpkin-MC/Pumpkin/tree/" + GetPumpkinCommitId());
     }
 }
