@@ -1,0 +1,37 @@
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
+
+namespace Universal_Pumpkin.Models
+{
+    public class Vector3
+    {
+        [JsonProperty("x")] public double X { get; set; }
+        [JsonProperty("y")] public double Y { get; set; }
+        [JsonProperty("z")] public double Z { get; set; }
+
+        [JsonIgnore] public string FmtX => X.ToString("0.000");
+        [JsonIgnore] public string FmtY => Y.ToString("0.00000");
+        [JsonIgnore] public string FmtZ => Z.ToString("0.000");
+    }
+
+    public class PlayerData
+    {
+        [JsonProperty("uuid")] public string Uuid { get; set; }
+        [JsonProperty("username")] public string Username { get; set; }
+        [JsonProperty("ip_address")] public string IpAddress { get; set; }
+        [JsonProperty("platform")] public string Platform { get; set; }
+        [JsonProperty("gamemode")] public string Gamemode { get; set; }
+        [JsonProperty("health")] public float Health { get; set; }
+        [JsonProperty("food_level")] public int FoodLevel { get; set; }
+        [JsonProperty("saturation")] public float Saturation { get; set; }
+        [JsonProperty("exp_level")] public int ExpLevel { get; set; }
+        [JsonProperty("exp_progress")] public float ExpProgress { get; set; }
+        [JsonProperty("total_exp")] public int TotalExp { get; set; }
+        [JsonProperty("permission_level")] public int PermissionLevel { get; set; }
+        [JsonProperty("is_on_ground")] public bool IsOnGround { get; set; }
+        [JsonProperty("position")] public Vector3 Position { get; set; }
+        [JsonProperty("dimension")] public string Dimension { get; set; }
+        [JsonProperty("is_sneaking")] public bool IsSneaking { get; set; }
+        [JsonProperty("is_sprinting")] public bool IsSprinting { get; set; }
+    }
+}
