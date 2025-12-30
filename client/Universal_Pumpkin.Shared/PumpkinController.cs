@@ -63,16 +63,19 @@ namespace Universal_Pumpkin
             }
         }
 
+        private Task _serverTask;
+
         public Task StartServerAsync()
         {
             if (IsRunning) return Task.CompletedTask;
 
             IsRunning = true;
+            _pendingDeops.Clear();
             GlobalLogEvent += OnGlobalLog;
 
             var folder = ApplicationData.Current.LocalFolder;
 
-            Task.Run(async () =>
+            _serverTask = Task.Run(async () =>
             {
                 int result = pumpkin_run_from_config_dir(folder.Path);
 
@@ -97,6 +100,22 @@ namespace Universal_Pumpkin
             });
 
             return Task.CompletedTask;
+        }
+
+        public async Task ShutdownSafelyAsync()
+        {
+            if (IsRunning && _serverTask != null)
+            {
+                pumpkin_request_stop();
+
+                var timeoutTask = Task.Delay(4000);
+                var finishedTask = await Task.WhenAny(_serverTask, timeoutTask);
+
+                if (finishedTask == timeoutTask)
+                {
+                    System.Diagnostics.Debug.WriteLine("[App] Server shutdown timed out.");
+                }
+            }
         }
 
         public void QueueOfflineDeop(string username)
