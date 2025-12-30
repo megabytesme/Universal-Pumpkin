@@ -160,9 +160,9 @@ namespace Universal_Pumpkin
             var listView = new ListView
             {
                 SelectionMode = ListViewSelectionMode.Single,
-                DisplayMemberPath = "Username",
                 ItemsSource = candidates,
-                Height = 200
+                Height = 300,
+                ItemTemplate = this.Resources["PlayerPickerTemplate"] as DataTemplate
             };
 
             var dialog = new ContentDialog
