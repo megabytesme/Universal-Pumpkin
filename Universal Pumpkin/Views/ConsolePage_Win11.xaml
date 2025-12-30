@@ -13,27 +13,39 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <CommandBar Grid.Row="0"
+                    Background="Transparent"
+                    DefaultLabelPosition="Right"
+                    Margin="-12">
+            <CommandBar.PrimaryCommands>
+                <AppBarButton x:Name="BtnStart" Label="Start" Icon="Play" Click="BtnStart_Click"/>
+                <AppBarButton x:Name="BtnStop" Label="Stop" Icon="Stop" Click="BtnStop_Click" Visibility="Collapsed"/>
+                <AppBarButton x:Name="BtnRestartApp" Label="Restart App" Icon="Refresh" Click="BtnRestartApp_Click" Visibility="Collapsed"/>
+            </CommandBar.PrimaryCommands>
+        </CommandBar>
+
         <muxc:InfoBar x:Name="StatusInfoBar"
-                      Grid.Row="0"
+                      Grid.Row="1"
                       Severity="Informational"
                       Title="Server Status"
                       Message="Ready to launch"
                       IsOpen="True"
                       IsClosable="False"
-                      Margin="0,0,0,12" />
+                      Margin="0,12,0,12" />
 
         <Grid x:Name="StatusGrid"
-              Grid.Row="1"
+              Grid.Row="2"
               Margin="0,0,0,12"
               Visibility="Collapsed"
               Background="{ThemeResource LayerFillColorDefaultBrush}"
               BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}"
               BorderThickness="1"
-              CornerRadius="8" 
+              CornerRadius="8"
               Padding="12">
 
             <Grid.ColumnDefinitions>
@@ -65,7 +77,7 @@
         </Grid>
 
         <ScrollViewer x:Name="LogScroller"
-                      Grid.Row="2"
+                      Grid.Row="3"
                       Background="Transparent">
             <TextBlock x:Name="TxtLog"
                        TextWrapping="Wrap"
@@ -74,7 +86,7 @@
                        IsTextSelectionEnabled="True"/>
         </ScrollViewer>
 
-        <Grid Grid.Row="3" Margin="0,12,0,0">
+        <Grid Grid.Row="4" Margin="0,12,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -96,14 +108,4 @@
                     IsEnabled="False"/>
         </Grid>
     </Grid>
-
-    <Page.BottomAppBar>
-        <CommandBar Background="Transparent" IsOpen="True" DefaultLabelPosition="Right">
-            <CommandBar.PrimaryCommands>
-                <AppBarButton x:Name="BtnStart" Label="Start" Icon="Play" Click="BtnStart_Click"/>
-                <AppBarButton x:Name="BtnStop" Label="Stop" Icon="Stop" Click="BtnStop_Click" Visibility="Collapsed"/>
-                <AppBarButton x:Name="BtnRestartApp" Label="Restart App" Icon="Refresh" Click="BtnRestartApp_Click" Visibility="Collapsed"/>
-            </CommandBar.PrimaryCommands>
-        </CommandBar>
-    </Page.BottomAppBar>
 </Page>
