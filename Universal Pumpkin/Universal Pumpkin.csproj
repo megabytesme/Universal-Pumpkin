@@ -229,12 +229,6 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <PumpkinDllPath>..\..\server\target\x86_64-uwp-windows-msvc\release\pumpkin.dll</PumpkinDllPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)'=='ARM64'">
-    <PumpkinDllPath>..\..\server\target\aarch64-uwp-windows-msvc\release\pumpkin.dll</PumpkinDllPath>
-  </PropertyGroup>
   <PropertyGroup>
     <PostBuildEvent>
     </PostBuildEvent>
@@ -243,15 +237,5 @@
     <PreBuildEvent>
     </PreBuildEvent>
   </PropertyGroup>
-  <ItemGroup Condition="'$(Platform)'=='x64'">
-    <Content Include="$(ProjectDir)bin\$(Platform)\$(Configuration)\pumpkin.dll">
-      <DeploymentContent>true</DeploymentContent>
-    </Content>
-  </ItemGroup>
-  <ItemGroup Condition="'$(Platform)'=='ARM64'">
-    <Content Include="$(ProjectDir)bin\$(Platform)\$(Configuration)\pumpkin.dll">
-      <DeploymentContent>true</DeploymentContent>
-    </Content>
-  </ItemGroup>
   <Import Project="..\Universal_Pumpkin.Shared\Universal_Pumpkin.Shared.projitems" Label="Shared" />
 </Project>

@@ -87,6 +87,12 @@
                 <Button x:Name="BtnReset" Content="Reset World Data (Delete Level)" Background="DarkRed" Foreground="White" Click="BtnReset_Click"/>
                 <Button Content="Open LocalState Folder" Click="BtnOpen_Click" Margin="0,10,0,0"/>
             </StackPanel>
+
+            <StackPanel Style="{StaticResource GroupPanelStyle}">
+                <TextBlock Text="Information" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                <Button Content="About Universal Pumpkin" Click="AboutButton_Click" Margin="0,0,0,5"/>
+                <Button Content="Disclaimer &amp; Legal" Click="DisclaimerButton_Click"/>
+            </StackPanel>
         </StackPanel>
     </ScrollViewer>
 </Page>
