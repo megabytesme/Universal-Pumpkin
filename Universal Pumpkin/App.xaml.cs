@@ -44,7 +44,7 @@ namespace Universal_Pumpkin
         /// <param name="e">Details about the launch request and process.</param>
         protected override void OnLaunched(LaunchActivatedEventArgs e)
         {
-            if (OSHelper.IsWindows11)
+            if (OSHelper.IsWin11Mode)
             {
                 try
                 {
@@ -57,7 +57,7 @@ namespace Universal_Pumpkin
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Failed to load WinUI resources: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Failed to load WinUI: {ex.Message}");
                 }
             }
 

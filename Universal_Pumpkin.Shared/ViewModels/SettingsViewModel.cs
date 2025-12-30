@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
+using Universal_Pumpkin.Services;
 using Windows.ApplicationModel;
 using Windows.Storage;
 
@@ -10,6 +11,22 @@ namespace Universal_Pumpkin.ViewModels
 {
     public class SettingsViewModel
     {
+        public bool IsModernUIEnabled
+        {
+            get => !GetLegacyModeSetting();
+            set => OSHelper.SetLegacyMode(!value);
+        }
+
+        public bool GetLegacyModeSetting()
+        {
+            var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+            if (settings.Values.TryGetValue("ForceWindows10", out object val))
+                return val is bool b && b;
+            return false;
+        }
+
+        public bool IsHostWin11 => OSHelper.IsWindows11Host;
+
         public async Task<string> GetFormattedStorageSizeAsync()
         {
             long bytes = await CalculateFolderSize(ApplicationData.Current.LocalFolder);

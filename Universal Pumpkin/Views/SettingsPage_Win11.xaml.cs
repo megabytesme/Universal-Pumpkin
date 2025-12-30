@@ -30,6 +30,8 @@ namespace Universal_Pumpkin.Views.Win11
         {
             _loading = true;
 
+            SwModernUI.IsOn = _vm.IsModernUIEnabled;
+
             await BindToggle(SwJava, "", "java_edition");
             await BindText(TxtJavaAddr, "", "java_edition_address");
             await BindToggle(SwBedrock, "", "bedrock_edition");
@@ -67,6 +69,27 @@ namespace Universal_Pumpkin.Views.Win11
             UpdateStorageSize();
 
             _loading = false;
+        }
+
+        private async void SwModernUI_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (_loading) return;
+
+            _vm.IsModernUIEnabled = SwModernUI.IsOn;
+
+            var result = await new ContentDialog
+            {
+                Title = "Restart Required",
+                Content = "The app must restart to apply the theme change.",
+                PrimaryButtonText = "Restart Now",
+                SecondaryButtonText = "Later",
+                XamlRoot = this.XamlRoot
+            }.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                await CoreApplication.RequestRestartAsync("");
+            }
         }
 
         private async void UpdateStorageSize()

@@ -155,7 +155,6 @@
       <DependentUpon>ShellPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Services\NavigationHelper.cs" />
-    <Compile Include="Services\OSHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
