@@ -33,6 +33,9 @@ namespace Universal_Pumpkin
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern void pumpkin_free_string(IntPtr ptr);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr pumpkin_get_completions_json(string input);
 #pragma warning restore IDE1006
 
         public bool IsRunning { get; private set; }
@@ -123,6 +126,28 @@ namespace Universal_Pumpkin
             {
                 return _logHistory.ToString();
             }
+        }
+
+        public async Task<List<CommandSuggestion>> GetSuggestionsAsync(string input)
+        {
+            if (!IsRunning || string.IsNullOrWhiteSpace(input)) return new List<CommandSuggestion>();
+
+            return await Task.Run(() =>
+            {
+                IntPtr jsonPtr = IntPtr.Zero;
+                try
+                {
+                    jsonPtr = pumpkin_get_completions_json(input);
+                    if (jsonPtr == IntPtr.Zero) return new List<CommandSuggestion>();
+
+                    string json = Marshal.PtrToStringAnsi(jsonPtr);
+                    pumpkin_free_string(jsonPtr);
+
+                    return JsonConvert.DeserializeObject<List<CommandSuggestion>>(json)
+                           ?? new List<CommandSuggestion>();
+                }
+                catch { return new List<CommandSuggestion>(); }
+            });
         }
     }
 }

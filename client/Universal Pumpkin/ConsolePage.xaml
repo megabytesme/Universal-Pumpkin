@@ -36,7 +36,8 @@
             <StackPanel Grid.Column="1"
                         Orientation="Horizontal"
                         VerticalAlignment="Center">
-                <TextBlock Text="Server IP:" Foreground="Gray"/>
+                <TextBlock Text="Server IP:"
+                           Foreground="Gray"/>
                 <TextBlock x:Name="TxtIpAddress"
                            Text="Loading..."
                            FontWeight="Bold"
@@ -55,16 +56,20 @@
                        IsTextSelectionEnabled="True"/>
         </ScrollViewer>
 
-        <Grid Grid.Row="2" Margin="0,12,0,0">
+        <Grid Grid.Row="2"
+              Margin="0,12,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBox x:Name="BoxCommand"
-                     PlaceholderText="Enter command (op, gamemode...)"
-                     KeyDown="BoxCommand_KeyDown"
-                     IsEnabled="False"/>
+            <AutoSuggestBox x:Name="BoxCommand"
+                            PlaceholderText="Enter command (e.g. op)"
+                            IsEnabled="False"
+                            TextChanged="BoxCommand_TextChanged"
+                            QuerySubmitted="BoxCommand_QuerySubmitted"
+                            SuggestionChosen="BoxCommand_SuggestionChosen"
+                            UpdateTextOnSelect="False"/>
 
             <Button x:Name="BtnSend"
                     Grid.Column="1"

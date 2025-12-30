@@ -34,4 +34,10 @@ namespace Universal_Pumpkin.Models
         [JsonProperty("is_sneaking")] public bool IsSneaking { get; set; }
         [JsonProperty("is_sprinting")] public bool IsSprinting { get; set; }
     }
+
+    public class CommandSuggestion
+    {
+        [JsonProperty("text")] public string Text { get; set; }
+        [JsonProperty("tooltip")] public string Tooltip { get; set; }
+    }
 }
