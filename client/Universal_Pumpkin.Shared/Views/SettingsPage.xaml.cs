@@ -222,7 +222,7 @@ namespace Universal_Pumpkin
 
         private async Task ShowDialog(string title, string content)
         {
-            await new ContentDialog { Title = title, Content = content, PrimaryButtonText = "OK", XamlRoot = this.XamlRoot }.ShowAsync();
+            await new ContentDialog { Title = title, Content = content, PrimaryButtonText = "OK"}.ShowAsync();
         }
 
         private async void AboutButton_Click(object sender, RoutedEventArgs e)
