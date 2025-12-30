@@ -229,6 +229,7 @@ impl ReadlineLogWrapper {
     }
 
     // This isn't really dead code, just for some reason rust thinks that it might be.
+    // Schroedinger's dead code -> expect warns unfulfilled lint expectation but removing it causes dead_code lint?
     #[cfg(feature = "tty")]
     #[allow(dead_code)]
     pub(crate) fn return_readline(&self, rl: Readline) {
