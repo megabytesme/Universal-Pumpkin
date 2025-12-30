@@ -23,9 +23,31 @@
                           IsOpen="True"
                           IsClosable="False"/>
 
-            <!-- 1. Networking -->
             <muxc:Expander HorizontalAlignment="Stretch"
                            IsExpanded="True">
+                <muxc:Expander.Header>
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="12">
+                        <FontIcon Glyph="&#xE790;"
+                                  FontFamily="Segoe MDL2 Assets"/>
+                        <TextBlock Text="Appearance"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </muxc:Expander.Header>
+
+                <StackPanel Spacing="12">
+                    <ToggleSwitch x:Name="SwModernUI"
+                                  Header="Use Windows 11 Visuals"
+                                  Toggled="SwModernUI_Toggled"/>
+                    <TextBlock Text="Requires app restart to apply changes."
+                               FontSize="10"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                </StackPanel>
+            </muxc:Expander>
+
+            <!-- 1. Networking -->
+            <muxc:Expander HorizontalAlignment="Stretch"
+                           IsExpanded="False">
                 <muxc:Expander.Header>
                     <StackPanel Orientation="Horizontal"
                                 Spacing="12">
@@ -268,7 +290,8 @@
             </muxc:Expander>
 
             <!-- 6. About -->
-            <muxc:Expander HorizontalAlignment="Stretch">
+            <muxc:Expander HorizontalAlignment="Stretch"
+                           IsExpanded="True">
                 <muxc:Expander.Header>
                     <StackPanel Orientation="Horizontal"
                                 Spacing="12">

@@ -12,6 +12,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\BackgroundKeeper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\MojangApiHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\ManagementHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\OSHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\ManagementModels.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\PlayersViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\SettingsViewModel.cs" />

@@ -7,7 +7,7 @@ namespace Universal_Pumpkin.Services
     {
         public static Type GetPageType(string pageKey)
         {
-            bool useModern = OSHelper.IsWindows11;
+            bool useModern = OSHelper.IsWin11Mode;
 
             switch (pageKey)
             {
