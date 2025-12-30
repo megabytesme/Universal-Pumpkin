@@ -12,7 +12,7 @@ public static class NativeProbe
 
     public static IntPtr TryLoadPumpkin()
     {
-        const string dllName = "pumpkin.dll";
+        const string dllName = "pumpkin_uwp.dll";
         IntPtr handle = LoadPackagedLibrary(dllName, 0);
         int error = Marshal.GetLastWin32Error();
         Debug.WriteLine($"[Probe] LoadPackagedLibrary('{dllName}') => 0x{handle.ToInt64():X}, GetLastError={error}");
