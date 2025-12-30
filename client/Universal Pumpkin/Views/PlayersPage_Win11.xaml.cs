@@ -9,19 +9,17 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Navigation;
 using Universal_Pumpkin.Models;
 using Universal_Pumpkin.ViewModels;
-using System.Diagnostics;
 using System.Net;
-using System.Collections.ObjectModel;
+using System.Diagnostics;
 
-namespace Universal_Pumpkin
+namespace Universal_Pumpkin.Views.Win11
 {
-    public sealed partial class PlayersPage : Page
+    public sealed partial class PlayersPage_Win11 : Page
     {
         private readonly PlayersViewModel _vm;
-        public ObservableCollection<PlayerData> PlayersList { get; } = new ObservableCollection<PlayerData>();
         private PlayerData _selectedPlayer;
 
-        public PlayersPage()
+        public PlayersPage_Win11()
         {
             this.InitializeComponent();
             _vm = new PlayersViewModel();
@@ -164,7 +162,7 @@ namespace Universal_Pumpkin
                 }
             }
         }
-
+        
         private async void BtnAddBan_Click(object sender, RoutedEventArgs e)
         {
             if (App.Server.IsRunning)
@@ -307,38 +305,12 @@ namespace Universal_Pumpkin
             }
         }
 
-        private void BtnRemoveEntry_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag != null)
-            {
-                if (btn.Tag is OpEntry) BtnRemoveOp_Click(sender, e);
-                else if (btn.Tag is BanEntry) BtnRemoveBan_Click(sender, e);
-                else if (btn.Tag is IpBanEntry) BtnRemoveIpBan_Click(sender, e);
-            }
-        }
-
         private async Task<PlayerData> PromptPlayerSelection(List<PlayerData> candidates, string title)
         {
-            var listView = new ListView
-            {
-                SelectionMode = ListViewSelectionMode.Single,
-                ItemsSource = candidates,
-                Height = 300,
-                ItemTemplate = this.Resources["PlayerPickerTemplate"] as DataTemplate
-            };
+            var lv = new ListView { SelectionMode = ListViewSelectionMode.Single, ItemsSource = candidates, Height = 300, ItemTemplate = (DataTemplate)this.Resources["PlayerPickerTemplate"] };
+            var dialog = new ContentDialog { Title = title, Content = lv, PrimaryButtonText = "Select", SecondaryButtonText = "Cancel", XamlRoot = this.XamlRoot };
 
-            var dialog = new ContentDialog
-            {
-                Title = title,
-                Content = listView,
-                PrimaryButtonText = "Select",
-                SecondaryButtonText = "Cancel"
-            };
-
-            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
-            {
-                return listView.SelectedItem as PlayerData;
-            }
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary) return lv.SelectedItem as PlayerData;
             return null;
         }
 
@@ -374,13 +346,13 @@ namespace Universal_Pumpkin
         private async Task<string> PromptString(string title)
         {
             var box = new TextBox();
-            var dialog = new ContentDialog { Title = title, Content = box, PrimaryButtonText = "OK", SecondaryButtonText = "Cancel" };
+            var dialog = new ContentDialog { Title = title, Content = box, PrimaryButtonText = "OK", SecondaryButtonText = "Cancel", XamlRoot = this.XamlRoot };
             return await dialog.ShowAsync() == ContentDialogResult.Primary ? box.Text : null;
         }
 
         private async Task ShowAlert(string msg)
         {
-            await new ContentDialog { Title = "Info", Content = msg, PrimaryButtonText = "OK" }.ShowAsync();
+            await new ContentDialog { Title = "Info", Content = msg, PrimaryButtonText = "OK", XamlRoot = this.XamlRoot }.ShowAsync();
         }
 
         private void Player_RightTapped(object sender, RightTappedRoutedEventArgs e) => ShowMenu(sender, e.OriginalSource);
@@ -398,7 +370,6 @@ namespace Universal_Pumpkin
         private void Menu_Op_Click(object sender, RoutedEventArgs e) { if (_selectedPlayer != null) _vm.SendCommand($"op {_selectedPlayer.Username}"); }
         private void Menu_Deop_Click(object sender, RoutedEventArgs e) { if (_selectedPlayer != null) _vm.SendCommand($"deop {_selectedPlayer.Username}"); }
         private void Menu_Gm_Click(object sender, RoutedEventArgs e) { if (_selectedPlayer != null && sender is MenuFlyoutItem item) _vm.SendCommand($"gamemode {item.Tag} {_selectedPlayer.Username}"); }
-
         private async void Menu_Kick_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedPlayer == null) return;

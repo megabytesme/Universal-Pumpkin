@@ -1,19 +1,19 @@
 ﻿using System;
-using Windows.ApplicationModel.Core;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Universal_Pumpkin.ViewModels;
+using Windows.ApplicationModel.Core;
 
-namespace Universal_Pumpkin
+namespace Universal_Pumpkin.Views.Win11
 {
-    public sealed partial class ConsolePage : Page
+    public sealed partial class ConsolePage_Win11 : Page
     {
         private readonly ConsoleViewModel _vm;
 
-        public ConsolePage()
+        public ConsolePage_Win11()
         {
             this.InitializeComponent();
             _vm = new ConsoleViewModel();
@@ -29,8 +29,7 @@ namespace Universal_Pumpkin
             _vm.OnNavigatedTo();
 
             TxtLog.Text = _vm.GetInitialLog();
-            try { LogScroller.ChangeView(null, LogScroller.ScrollableHeight, null); } catch { }
-
+            ScrollLogToBottom();
             UpdateUiState();
         }
 
@@ -38,6 +37,47 @@ namespace Universal_Pumpkin
         {
             base.OnNavigatedFrom(e);
             _vm.OnNavigatedFrom();
+        }
+
+        private void UpdateUiState()
+        {
+            StatusInfoBar.IsClosable = true;
+
+            if (App.Server.IsRunning)
+            {
+                StatusInfoBar.Severity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success;
+                StatusInfoBar.Title = "Server Running";
+                StatusInfoBar.Message = $"Listening on {_vm.LocalIpAddress}";
+                StatusInfoBar.IsOpen = true;
+
+                StatusGrid.Visibility = Visibility.Visible;
+                TxtIpAddress.Text = _vm.LocalIpAddress;
+
+                BtnStart.Visibility = Visibility.Collapsed;
+                BtnRestartApp.Visibility = Visibility.Collapsed;
+
+                BtnStop.Visibility = Visibility.Visible;
+                BtnStop.IsEnabled = true;
+
+                BoxCommand.IsEnabled = true;
+                BtnSend.IsEnabled = true;
+            }
+            else
+            {
+                StatusInfoBar.Severity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational;
+                StatusInfoBar.Title = "Ready";
+                StatusInfoBar.Message = "Server is ready to launch.";
+                StatusInfoBar.IsOpen = true;
+
+                StatusGrid.Visibility = Visibility.Collapsed;
+
+                BtnStart.Visibility = Visibility.Visible;
+                BtnStop.Visibility = Visibility.Collapsed;
+                BtnRestartApp.Visibility = Visibility.Collapsed;
+
+                BoxCommand.IsEnabled = false;
+                BtnSend.IsEnabled = false;
+            }
         }
 
         private async void Vm_MetricsUpdated(object sender, EventArgs e)
@@ -59,111 +99,92 @@ namespace Universal_Pumpkin
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
                 TxtLog.Text += e + "\n";
-                LogScroller.ChangeView(null, LogScroller.ScrollableHeight, null);
+                ScrollLogToBottom();
             });
         }
 
-        private async void Vm_ServerStopped(object sender, int e)
+        private async void Vm_ServerStopped(object sender, int code)
         {
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                StatusGrid.Visibility = Visibility.Collapsed;
-                BtnStop.Visibility = Visibility.Collapsed;
-                BtnStart.Visibility = Visibility.Collapsed;
-                BtnRestartApp.Visibility = Visibility.Visible;
+                try
+                {
+                    UpdateUiState();
 
-                BoxCommand.IsEnabled = false;
-                BtnSend.IsEnabled = false;
+                    BtnStart.Visibility = Visibility.Collapsed;
+                    BtnStop.Visibility = Visibility.Collapsed;
+                    BtnRestartApp.Visibility = Visibility.Visible;
 
-                TxtStatus.Text = $"Server Stopped (Code {e})";
-                TxtLog.Text += $"\n[System] Server stopped. Please restart the app to run again.\n";
+                    StatusInfoBar.Severity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error;
+                    StatusInfoBar.Title = "Server Stopped";
+                    StatusInfoBar.Message = $"Code: {code}. Please restart the app.";
+                    StatusInfoBar.IsClosable = true;
+                    StatusInfoBar.IsOpen = true;
+
+                    TxtLog.Text += $"\n[System] Server stopped (Code {code}).\n";
+                    ScrollLogToBottom();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error in Vm_ServerStopped: {ex.Message}");
+                }
             });
         }
 
-        private void UpdateUiState()
+        private void ScrollLogToBottom()
         {
-            if (App.Server.IsRunning)
-            {
-                BtnStart.Visibility = Visibility.Collapsed;
-                BtnRestartApp.Visibility = Visibility.Collapsed;
-                BtnStop.Visibility = Visibility.Visible;
-                BtnStop.IsEnabled = true;
-
-                BoxCommand.IsEnabled = true;
-                BtnSend.IsEnabled = true;
-
-                TxtStatus.Text = "Running";
-                StatusGrid.Visibility = Visibility.Visible;
-                TxtIpAddress.Text = _vm.LocalIpAddress;
-            }
-            else
-            {
-                BtnStart.Visibility = Visibility.Visible;
-                BtnStop.Visibility = Visibility.Collapsed;
-                BtnRestartApp.Visibility = Visibility.Collapsed;
-
-                BoxCommand.IsEnabled = false;
-                BtnSend.IsEnabled = false;
-
-                StatusGrid.Visibility = Visibility.Collapsed;
-                if (string.IsNullOrEmpty(TxtStatus.Text)) TxtStatus.Text = "Ready";
-            }
+            try { LogScroller.ChangeView(null, LogScroller.ScrollableHeight, null); } catch { }
         }
-
+        
         private async void BtnStart_Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 await _vm.StartServerAsync();
                 UpdateUiState();
-                TxtStatus.Text = "Running";
-                TxtLog.Text = "";
-                TxtIpAddress.Text = _vm.LocalIpAddress;
-                StatusGrid.Visibility = Visibility.Visible;
             }
             catch (Exception)
             {
-                TxtStatus.Text = "Error: DLL missing";
+                StatusInfoBar.Severity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error;
+                StatusInfoBar.Title = "Error";
+                StatusInfoBar.Message = "Pumpkin DLL is missing.";
             }
         }
 
         private void BtnStop_Click(object sender, RoutedEventArgs e)
         {
             BtnStop.IsEnabled = false;
-            TxtStatus.Text = "Stopping...";
+            StatusInfoBar.Message = "Stopping...";
             _vm.StopServer();
         }
 
         private async void BtnRestartApp_Click(object sender, RoutedEventArgs e)
         {
-#if UWP1709
-            bool canRestart = true;
-#else
-            bool canRestart = false;
-#endif
-
             var restartDialog = new ContentDialog
             {
                 Title = "Restart app",
-                Content = canRestart
-                    ? "Due to limitations, the app must restart to run the server again. Restart now?"
-                    : "Due to limitations, the app must close to run the server again. Close now?",
+                Content = "Restart now?",
                 PrimaryButtonText = "Yes",
                 SecondaryButtonText = "No"
             };
+            
+            restartDialog.XamlRoot = this.XamlRoot;
 
-            ContentDialogResult result = await restartDialog.ShowAsync();
+            var result = await restartDialog.ShowAsync();
 
             if (result == ContentDialogResult.Primary)
             {
-#if UWP1709
                 await CoreApplication.RequestRestartAsync("");
-#else
-                CoreApplication.Exit();
-#endif
             }
         }
 
+        private void BtnSend_Click(object sender, RoutedEventArgs e)
+        {
+            _vm.SendCommand(BoxCommand.Text);
+            BoxCommand.Text = "";
+            BoxCommand.Focus(FocusState.Programmatic);
+        }
+        
         private async void BoxCommand_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
             if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput) return;
@@ -183,20 +204,11 @@ namespace Universal_Pumpkin
         {
             string selected = args.SelectedItem.ToString();
             string currentText = sender.Text;
-            
             int lastSpace = currentText.LastIndexOf(' ');
-            
-            if (lastSpace >= 0)
-            {
-                string prefix = currentText.Substring(0, lastSpace + 1);
-                sender.Text = prefix + selected;
-            }
-            else
-            {
-                sender.Text = selected;
-            }
 
-            var textBox = FindChild<TextBox>(sender); 
+            sender.Text = (lastSpace >= 0 ? currentText.Substring(0, lastSpace + 1) : "") + selected;
+
+            var textBox = FindChild<TextBox>(sender);
             if (textBox != null) textBox.SelectionStart = sender.Text.Length;
         }
 
@@ -211,13 +223,6 @@ namespace Universal_Pumpkin
                 if (result != null) return result;
             }
             return null;
-        }
-
-        private void BtnSend_Click(object sender, RoutedEventArgs e)
-        {
-            _vm.SendCommand(BoxCommand.Text);
-            BoxCommand.Text = "";
-            BoxCommand.Focus(FocusState.Programmatic);
         }
     }
 }

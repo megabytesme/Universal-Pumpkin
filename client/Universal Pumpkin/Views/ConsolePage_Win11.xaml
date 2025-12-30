@@ -1,0 +1,109 @@
+﻿<Page
+    x:Class="Universal_Pumpkin.Views.Win11.ConsolePage_Win11"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    NavigationCacheMode="Required"
+    muxc:BackdropMaterial.ApplyToRootOrPageBackground="True">
+
+    <Grid Padding="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <muxc:InfoBar x:Name="StatusInfoBar"
+                      Grid.Row="0"
+                      Severity="Informational"
+                      Title="Server Status"
+                      Message="Ready to launch"
+                      IsOpen="True"
+                      IsClosable="False"
+                      Margin="0,0,0,12" />
+
+        <Grid x:Name="StatusGrid"
+              Grid.Row="1"
+              Margin="0,0,0,12"
+              Visibility="Collapsed"
+              Background="{ThemeResource LayerFillColorDefaultBrush}"
+              BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}"
+              BorderThickness="1"
+              CornerRadius="8" 
+              Padding="12">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                <TextBlock Text="Server Address" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                <TextBlock x:Name="TxtIpAddress" Text="127.0.0.1" FontWeight="Bold" FontSize="16" IsTextSelectionEnabled="True"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="TPS" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Right"/>
+                <TextBlock x:Name="TxtTPS" Text="20.0" FontWeight="Bold" Foreground="#FF55FF55" HorizontalAlignment="Right"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Margin="24,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="MSPT" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Right"/>
+                <TextBlock x:Name="TxtMSPT" Text="12.50ms" FontWeight="Bold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" HorizontalAlignment="Right"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="3" Margin="24,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="Mem" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Right"/>
+                <TextBlock x:Name="TxtRAM" Text="150 MB" FontWeight="Bold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" HorizontalAlignment="Right"/>
+            </StackPanel>
+        </Grid>
+
+        <ScrollViewer x:Name="LogScroller"
+                      Grid.Row="2"
+                      Background="Transparent">
+            <TextBlock x:Name="TxtLog"
+                       TextWrapping="Wrap"
+                       FontFamily="Consolas"
+                       FontSize="14"
+                       IsTextSelectionEnabled="True"/>
+        </ScrollViewer>
+
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <AutoSuggestBox x:Name="BoxCommand"
+                            PlaceholderText="Enter command..."
+                            IsEnabled="False"
+                            TextChanged="BoxCommand_TextChanged"
+                            QuerySubmitted="BoxCommand_QuerySubmitted"
+                            SuggestionChosen="BoxCommand_SuggestionChosen"
+                            UpdateTextOnSelect="False"/>
+
+            <Button x:Name="BtnSend"
+                    Grid.Column="1"
+                    Content="Send"
+                    Click="BtnSend_Click"
+                    Margin="12,0,0,0"
+                    IsEnabled="False"/>
+        </Grid>
+    </Grid>
+
+    <Page.BottomAppBar>
+        <CommandBar Background="Transparent" IsOpen="True" DefaultLabelPosition="Right">
+            <CommandBar.PrimaryCommands>
+                <AppBarButton x:Name="BtnStart" Label="Start" Icon="Play" Click="BtnStart_Click"/>
+                <AppBarButton x:Name="BtnStop" Label="Stop" Icon="Stop" Click="BtnStop_Click" Visibility="Collapsed"/>
+                <AppBarButton x:Name="BtnRestartApp" Label="Restart App" Icon="Refresh" Click="BtnRestartApp_Click" Visibility="Collapsed"/>
+            </CommandBar.PrimaryCommands>
+        </CommandBar>
+    </Page.BottomAppBar>
+</Page>

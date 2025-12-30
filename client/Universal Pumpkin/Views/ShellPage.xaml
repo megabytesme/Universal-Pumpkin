@@ -1,0 +1,37 @@
+﻿<Page
+    x:Class="Universal_Pumpkin.Views.Win11.ShellPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    muxc:BackdropMaterial.ApplyToRootOrPageBackground="True">
+
+    <Grid>
+        <muxc:NavigationView x:Name="NavView"
+                             PaneDisplayMode="Auto"
+                             SelectionChanged="NavView_SelectionChanged"
+                             IsSettingsVisible="True"
+                             IsBackButtonVisible="Collapsed">
+
+            <muxc:NavigationView.MenuItems>
+                <muxc:NavigationViewItem Tag="Console" Content="Console">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7F8;" FontFamily="Segoe MDL2 Assets"/>
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+
+                <muxc:NavigationViewItem Tag="Players" Content="Players">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE716;" FontFamily="Segoe MDL2 Assets"/>
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+            </muxc:NavigationView.MenuItems>
+
+            <muxc:NavigationView.Content>
+                <Frame x:Name="ContentFrame" />
+            </muxc:NavigationView.Content>
+        </muxc:NavigationView>
+    </Grid>
+</Page>

@@ -9,16 +9,17 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Documents;
+using Windows.UI.Xaml.Navigation;
 using Universal_Pumpkin.ViewModels;
 
-namespace Universal_Pumpkin
+namespace Universal_Pumpkin.Views.Win11
 {
-    public sealed partial class SettingsPage : Page
+    public sealed partial class SettingsPage_Win11 : Page
     {
         private bool _loading = true;
         private readonly SettingsViewModel _vm;
 
-        public SettingsPage()
+        public SettingsPage_Win11()
         {
             this.InitializeComponent();
             _vm = new SettingsViewModel();
@@ -78,14 +79,16 @@ namespace Universal_Pumpkin
         {
             if (App.Server.IsRunning)
             {
-                await new ContentDialog { Title = "Server Running", Content = "Please stop the server before creating a backup to ensure data integrity.", PrimaryButtonText = "OK" }.ShowAsync();
+                await ShowDialog("Server Running", "Please stop the server before creating a backup.");
                 return;
             }
 
-            var savePicker = new FileSavePicker();
-            savePicker.SuggestedStartLocation = PickerLocationId.Desktop;
+            var savePicker = new FileSavePicker
+            {
+                SuggestedStartLocation = PickerLocationId.Desktop,
+                SuggestedFileName = $"Pumpkin_Backup_{DateTime.Now:yyyy-MM-dd_HH-mm}"
+            };
             savePicker.FileTypeChoices.Add("Zip Archive", new List<string>() { ".zip" });
-            savePicker.SuggestedFileName = $"Pumpkin_Backup_{DateTime.Now:yyyy-MM-dd_HH-mm}";
 
             StorageFile file = await savePicker.PickSaveFileAsync();
             if (file != null)
@@ -96,11 +99,11 @@ namespace Universal_Pumpkin
                 try
                 {
                     await _vm.CreateBackupZip(file);
-                    await new ContentDialog { Title = "Success", Content = "Backup created successfully.", PrimaryButtonText = "OK" }.ShowAsync();
+                    await ShowDialog("Success", "Backup created successfully.");
                 }
                 catch (Exception ex)
                 {
-                    await new ContentDialog { Title = "Error", Content = ex.Message, PrimaryButtonText = "OK" }.ShowAsync();
+                    await ShowDialog("Error", ex.Message);
                 }
                 finally
                 {
@@ -114,13 +117,15 @@ namespace Universal_Pumpkin
         {
             if (App.Server.IsRunning)
             {
-                await new ContentDialog { Title = "Server Running", Content = "Please stop the server before restoring a backup.", PrimaryButtonText = "OK" }.ShowAsync();
+                await ShowDialog("Server Running", "Please stop the server before restoring a backup.");
                 return;
             }
 
-            var openPicker = new FileOpenPicker();
-            openPicker.ViewMode = PickerViewMode.List;
-            openPicker.SuggestedStartLocation = PickerLocationId.Desktop;
+            var openPicker = new FileOpenPicker
+            {
+                ViewMode = PickerViewMode.List,
+                SuggestedStartLocation = PickerLocationId.Desktop
+            };
             openPicker.FileTypeFilter.Add(".zip");
 
             StorageFile file = await openPicker.PickSingleFileAsync();
@@ -131,7 +136,8 @@ namespace Universal_Pumpkin
                     Title = "Confirm Restore",
                     Content = "This will OVERWRITE your current world, players, and config. This cannot be undone.",
                     PrimaryButtonText = "Restore",
-                    SecondaryButtonText = "Cancel"
+                    SecondaryButtonText = "Cancel",
+                    XamlRoot = this.XamlRoot
                 };
 
                 if (await confirm.ShowAsync() == ContentDialogResult.Primary)
@@ -143,12 +149,11 @@ namespace Universal_Pumpkin
                     {
                         await _vm.RestoreBackupZip(file);
                         UpdateStorageSize();
-
-                        await new ContentDialog { Title = "Success", Content = "Backup restored. Please restart the app to ensure configs are reloaded.", PrimaryButtonText = "OK" }.ShowAsync();
+                        await ShowDialog("Success", "Backup restored. Please restart the app.");
                     }
                     catch (Exception ex)
                     {
-                        await new ContentDialog { Title = "Restore Failed", Content = ex.Message, PrimaryButtonText = "OK" }.ShowAsync();
+                        await ShowDialog("Restore Failed", ex.Message);
                     }
                     finally
                     {
@@ -161,12 +166,6 @@ namespace Universal_Pumpkin
 
         private async void BtnReset_Click(object sender, RoutedEventArgs e)
         {
-#if UWP1709
-            bool canRestart = true;
-#else
-            bool canRestart = false;
-#endif
-
             if (App.Server.IsRunning)
             {
                 await ShowDialog("Server Running", "Please stop the server before resetting data.");
@@ -177,7 +176,8 @@ namespace Universal_Pumpkin
                 Title = "Delete World Files",
                 Content = "Are you sure you want to continue? This action is permanent.",
                 PrimaryButtonText = "Yes",
-                SecondaryButtonText = "No"
+                SecondaryButtonText = "No",
+                XamlRoot = this.XamlRoot
             };
 
             if (await deleteDialog.ShowAsync() == ContentDialogResult.Primary)
@@ -186,31 +186,26 @@ namespace Universal_Pumpkin
                 {
                     await _vm.DeleteWorldData();
 
-                    var deleteCompleteDialog = new ContentDialog
+                    var completeDialog = new ContentDialog
                     {
                         Title = "World Files Deleted",
-                        Content = canRestart ? "Restart now?" : "Close app now?",
+                        Content = "Restart now?",
                         PrimaryButtonText = "Yes",
-                        SecondaryButtonText = "No"
+                        SecondaryButtonText = "No",
+                        XamlRoot = this.XamlRoot
                     };
 
-                    if (await deleteCompleteDialog.ShowAsync() == ContentDialogResult.Primary)
+                    if (await completeDialog.ShowAsync() == ContentDialogResult.Primary)
                     {
-#if UWP1709
                         await CoreApplication.RequestRestartAsync("");
-#else
-                        CoreApplication.Exit();
-#endif
                     }
 
-                    var btn = (Button)sender;
-                    btn.Content = "Data Deleted!";
-                    btn.IsEnabled = false;
+                    ((Button)sender).Content = "Data Deleted!";
+                    ((Button)sender).IsEnabled = false;
                 }
                 catch (Exception ex)
                 {
-                    var btn = (Button)sender;
-                    btn.Content = "Error: " + ex.Message;
+                    ((Button)sender).Content = "Error: " + ex.Message;
                 }
             }
         }
@@ -306,14 +301,7 @@ namespace Universal_Pumpkin
                 },
             };
 
-            var dialog = new ContentDialog
-            {
-                Title = "About",
-                Content = scrollContent,
-                PrimaryButtonText = "OK"
-            };
-
-            await dialog.ShowAsync();
+            await new ContentDialog { Title = "About", Content = scrollContent, PrimaryButtonText = "OK", XamlRoot = this.XamlRoot }.ShowAsync();
         }
 
         private async void DisclaimerButton_Click(object sender, RoutedEventArgs e)
@@ -326,13 +314,7 @@ namespace Universal_Pumpkin
             textBlock.Inlines.Add(new LineBreak());
             textBlock.Inlines.Add(new Run { Text = "\"Minecraft\" is a trademark of Mojang Synergies AB." });
 
-            var dialog = new ContentDialog
-            {
-                Title = "Disclaimer",
-                Content = new ScrollViewer { Content = textBlock },
-                PrimaryButtonText = "I Understand",
-            };
-            await dialog.ShowAsync();
+            await new ContentDialog { Title = "Disclaimer", Content = new ScrollViewer { Content = textBlock }, PrimaryButtonText = "I Understand", XamlRoot = this.XamlRoot }.ShowAsync();
         }
 
         private async Task BindToggle(ToggleSwitch ts, string section, string key)
