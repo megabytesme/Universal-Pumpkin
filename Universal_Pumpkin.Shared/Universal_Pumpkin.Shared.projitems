@@ -9,6 +9,7 @@
     <Import_RootNamespace>Universal_Pumpkin.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\BackgroundKeeper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\MojangApiHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\ManagementHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\ManagementModels.cs" />
