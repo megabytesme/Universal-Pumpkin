@@ -12,6 +12,7 @@
     <Page.Resources>
         <local:OpLevelToVisConverter x:Key="OpLevelToVisConverter"/>
         <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
+        <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
 
         <MenuFlyout x:Key="PlayerContextMenu">
             <MenuFlyoutItem Text="Operator (OP)"
