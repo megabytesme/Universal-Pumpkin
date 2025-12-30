@@ -221,6 +221,26 @@ Upstream Changelog:
    * summary 4
 ```
 
+## **Updating Client Version Metadata After Syncing Upstream**
+
+When synchronizing the Pumpkin server core into the `/server` directory, you must also update the version metadata used by the UWP client. These values are displayed in the **About** dialog and help identify exactly which upstream commit the bundled server core is based on.
+
+After completing the upstream sync, open:
+
+```
+client/Universal_Pumpkin.Shared/SettingsPage.xaml.cs
+```
+
+and update the following helper methods:
+
+- `GetPumpkinVersion()`  
+- `GetMinecraftVersion()`  
+- `GetProtocolVersion()`  
+- `GetPumpkinCommitId()`  
+- `GetPumpkinCommitUri()`
+
+These should reflect the **exact upstream commit** you pulled into `/server`, along with the corresponding Pumpkin, Minecraft, and protocol versions (these can be sourced via running the `pumpkin` command in the server).
+
 ## License
 
 This project operates under a dual-license structure:
