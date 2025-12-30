@@ -228,7 +228,7 @@ When synchronizing the Pumpkin server core into the `/server` directory, you mus
 After completing the upstream sync, open:
 
 ```
-client/Universal_Pumpkin.Shared/SettingsPage.xaml.cs
+client/Universal_Pumpkin.Shared/Views/SettingsPage.xaml.cs
 ```
 
 and update the following helper methods:
