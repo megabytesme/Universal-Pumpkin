@@ -50,7 +50,7 @@ try {
         --release `
         --no-default-features
 
-    $DllPath = Join-Path $BuildDir "aarch64-uwp-windows-msvc\release\pumpkin.dll"
+    $DllPath = Join-Path $BuildDir "aarch64-uwp-windows-msvc\release\pumpkin_uwp.dll"
     if (Test-Path $DllPath) {
         Write-Host "Build succeeded: $DllPath" -ForegroundColor Yellow
     }

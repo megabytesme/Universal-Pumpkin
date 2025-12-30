@@ -131,7 +131,7 @@ try {
         --release `
         --no-default-features
 
-    $DllPath = Join-Path $BuildDir "thumbv7a-uwp-windows-msvc\release\pumpkin.dll"
+    $DllPath = Join-Path $BuildDir "thumbv7a-uwp-windows-msvc\release\pumpkin_uwp.dll"
 
     if (Test-Path $DllPath) {
         Write-Host "Build succeeded. DLL generated at:" -ForegroundColor Green
