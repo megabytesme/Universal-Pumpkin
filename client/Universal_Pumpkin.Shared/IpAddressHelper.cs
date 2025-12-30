@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using Windows.Networking;
 using Windows.Networking.Connectivity;
 
@@ -22,9 +21,7 @@ namespace Universal_Pumpkin
                             hn.IPInformation.NetworkAdapter.NetworkAdapterId == icp.NetworkAdapter.NetworkAdapterId);
 
                     if (hostname != null)
-                    {
                         return hostname.CanonicalName;
-                    }
                 }
 
                 var anyIp = NetworkInformation.GetHostNames()

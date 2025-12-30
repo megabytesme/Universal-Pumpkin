@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>8f44de68-cea2-4edd-b0be-eb5f7a3d74cf</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Universal_Pumpkin.Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)MainPage.xaml.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ConsolePage.xaml.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PlayersPage.xaml.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SettingsPage.xaml.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ConfigHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Converters.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DataModels.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IpAddressHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LoadPackagedLibrary.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PumpkinController.cs" />
+  </ItemGroup>
+</Project>

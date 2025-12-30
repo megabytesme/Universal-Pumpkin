@@ -21,6 +21,12 @@
                             <TextBlock Text="Console" VerticalAlignment="Center" Margin="16,0,0,0"/>
                         </StackPanel>
                     </ListBoxItem>
+                    <ListBoxItem Tag="Players">
+                        <StackPanel Orientation="Horizontal" Padding="4">
+                            <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets" FontSize="18" VerticalAlignment="Center"/>
+                            <TextBlock Text="Players" VerticalAlignment="Center" Margin="16,0,0,0"/>
+                        </StackPanel>
+                    </ListBoxItem>
                     <ListBoxItem Tag="Settings">
                         <StackPanel Orientation="Horizontal" Padding="4">
                             <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="18" VerticalAlignment="Center"/>
