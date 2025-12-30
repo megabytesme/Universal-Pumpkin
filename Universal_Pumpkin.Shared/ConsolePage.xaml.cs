@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Windows.ApplicationModel.Core;
 using Windows.Foundation.Metadata;
 using Windows.System;
@@ -157,22 +158,68 @@ namespace Universal_Pumpkin
             }
         }
 
-        private void SendCommand()
+        private async void BoxCommand_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
-            if (!string.IsNullOrWhiteSpace(BoxCommand.Text))
+            if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput) return;
+
+            string text = sender.Text;
+            
+            var suggestions = await App.Server.GetSuggestionsAsync(text);
+
+            sender.ItemsSource = suggestions.Select(s => s.Text).ToList();
+        }
+
+        private void BoxCommand_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            string command = string.IsNullOrEmpty(args.QueryText) ? sender.Text : args.QueryText;
+            SendCommand(command);
+        }
+
+        private void BoxCommand_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        {
+            string selected = args.SelectedItem.ToString();
+            string currentText = sender.Text;
+            
+            int lastSpace = currentText.LastIndexOf(' ');
+            
+            if (lastSpace >= 0)
             {
-                App.Server.SendCommand(BoxCommand.Text);
-                TxtLog.Text += $"> {BoxCommand.Text}\n";
+                string prefix = currentText.Substring(0, lastSpace + 1);
+                sender.Text = prefix + selected;
+            }
+            else
+            {
+                sender.Text = selected;
+            }
+
+            var textBox = FindChild<TextBox>(sender); 
+            if (textBox != null) textBox.SelectionStart = sender.Text.Length;
+        }
+
+        private static T FindChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            int count = Windows.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = Windows.UI.Xaml.Media.VisualTreeHelper.GetChild(parent, i);
+                if (child is T t) return t;
+                var result = FindChild<T>(child);
+                if (result != null) return result;
+            }
+            return null;
+        }
+
+        private void SendCommand(string text = null)
+        {
+            string cmd = text ?? BoxCommand.Text;
+            if (!string.IsNullOrWhiteSpace(cmd))
+            {
+                App.Server.SendCommand(cmd);
                 BoxCommand.Text = "";
                 BoxCommand.Focus(FocusState.Programmatic);
             }
         }
 
         private void BtnSend_Click(object sender, RoutedEventArgs e) => SendCommand();
-
-        private void BoxCommand_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == VirtualKey.Enter) SendCommand();
-        }
     }
 }
