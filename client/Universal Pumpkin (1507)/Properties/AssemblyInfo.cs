@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Resources;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -6,11 +7,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Universal Pumpkin (1507)")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Empowering everyone to host fast and efficient Minecraft servers on Universal Windows Platform (UWP) supporting devices.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("MegaBytesMe")]
 [assembly: AssemblyProduct("Universal Pumpkin (1507)")]
-[assembly: AssemblyCopyright("Copyright ©  2025")]
+[assembly: AssemblyCopyright("Copyright © 2025 MegaBytesMe")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
