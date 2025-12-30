@@ -1,6 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
 using Windows.Storage;
+using Windows.Storage.Pickers;
 using Windows.System;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -57,10 +62,204 @@ namespace Universal_Pumpkin
             string sd = await ConfigHelper.GetValueAsync("", "simulation_distance");
             if (double.TryParse(sd, out double s)) { SldSim.Value = s; TxtSimVal.Text = s.ToString(); }
 
+            UpdateStorageSize();
+
             _loading = false;
         }
 
-        // ... Bind helpers ...
+        private async void UpdateStorageSize()
+        {
+            TxtWorldSize.Text = "Calculating...";
+            long bytes = await CalculateFolderSize(ApplicationData.Current.LocalFolder);
+            TxtWorldSize.Text = FormatBytes(bytes);
+        }
+
+        private async Task<long> CalculateFolderSize(StorageFolder folder)
+        {
+            long size = 0;
+            foreach (var file in await folder.GetFilesAsync())
+            {
+                var props = await file.GetBasicPropertiesAsync();
+                size += (long)props.Size;
+            }
+            foreach (var sub in await folder.GetFoldersAsync())
+            {
+                size += await CalculateFolderSize(sub);
+            }
+            return size;
+        }
+
+        private string FormatBytes(long bytes)
+        {
+            string[] suffixes = { "B", "KB", "MB", "GB" };
+            int counter = 0;
+            decimal number = bytes;
+            while (Math.Round(number / 1024) >= 1)
+            {
+                number /= 1024;
+                counter++;
+            }
+            return string.Format("{0:n1} {1}", number, suffixes[counter]);
+        }
+
+        private async void BtnBackup_Click(object sender, RoutedEventArgs e)
+        {
+            if (App.Server.IsRunning)
+            {
+                await new ContentDialog { Title = "Server Running", Content = "Please stop the server before creating a backup to ensure data integrity.", PrimaryButtonText = "OK" }.ShowAsync();
+                return;
+            }
+
+            var savePicker = new FileSavePicker();
+            savePicker.SuggestedStartLocation = PickerLocationId.Desktop;
+            savePicker.FileTypeChoices.Add("Zip Archive", new List<string>() { ".zip" });
+            savePicker.SuggestedFileName = $"Pumpkin_Backup_{DateTime.Now:yyyy-MM-dd_HH-mm}";
+
+            StorageFile file = await savePicker.PickSaveFileAsync();
+            if (file != null)
+            {
+                BtnBackup.IsEnabled = false;
+                BtnBackup.Content = "Zipping...";
+
+                try
+                {
+                    await CreateBackupZip(file);
+                    await new ContentDialog { Title = "Success", Content = "Backup created successfully.", PrimaryButtonText = "OK" }.ShowAsync();
+                }
+                catch (Exception ex)
+                {
+                    await new ContentDialog { Title = "Error", Content = ex.Message, PrimaryButtonText = "OK" }.ShowAsync();
+                }
+                finally
+                {
+                    BtnBackup.IsEnabled = true;
+                    BtnBackup.Content = "Backup to Zip";
+                }
+            }
+        }
+
+        private async Task CreateBackupZip(StorageFile destinationFile)
+        {
+            var localFolder = ApplicationData.Current.LocalFolder;
+
+            using (var stream = await destinationFile.OpenStreamForWriteAsync())
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Create))
+            {
+                await AddFolderToZip(archive, localFolder, "");
+            }
+        }
+
+        private async Task AddFolderToZip(ZipArchive archive, StorageFolder folder, string entryPath)
+        {
+            foreach (var file in await folder.GetFilesAsync())
+            {
+                if (file.Name.EndsWith(".dll") || file.Name.EndsWith(".lock") || file.Name.EndsWith(".tmp")) continue;
+
+                var entryName = Path.Combine(entryPath, file.Name);
+                var entry = archive.CreateEntry(entryName);
+
+                using (var entryStream = entry.Open())
+                using (var fileStream = await file.OpenStreamForReadAsync())
+                {
+                    await fileStream.CopyToAsync(entryStream);
+                }
+            }
+
+            foreach (var sub in await folder.GetFoldersAsync())
+            {
+                await AddFolderToZip(archive, sub, Path.Combine(entryPath, sub.Name));
+            }
+        }
+
+        private async void BtnRestore_Click(object sender, RoutedEventArgs e)
+        {
+            if (App.Server.IsRunning)
+            {
+                await new ContentDialog { Title = "Server Running", Content = "Please stop the server before restoring a backup.", PrimaryButtonText = "OK" }.ShowAsync();
+                return;
+            }
+
+            var openPicker = new FileOpenPicker();
+            openPicker.ViewMode = PickerViewMode.List;
+            openPicker.SuggestedStartLocation = PickerLocationId.Desktop;
+            openPicker.FileTypeFilter.Add(".zip");
+
+            StorageFile file = await openPicker.PickSingleFileAsync();
+            if (file != null)
+            {
+                var confirm = new ContentDialog
+                {
+                    Title = "Confirm Restore",
+                    Content = "This will OVERWRITE your current world, players, and config. This cannot be undone.",
+                    PrimaryButtonText = "Restore",
+                    SecondaryButtonText = "Cancel"
+                };
+
+                if (await confirm.ShowAsync() == ContentDialogResult.Primary)
+                {
+                    BtnRestore.IsEnabled = false;
+                    BtnRestore.Content = "Restoring...";
+
+                    try
+                    {
+                        await ExtractBackupZip(file);
+
+                        UpdateStorageSize();
+
+                        await new ContentDialog { Title = "Success", Content = "Backup restored. Please restart the app to ensure configs are reloaded.", PrimaryButtonText = "OK" }.ShowAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        await new ContentDialog { Title = "Restore Failed", Content = ex.Message, PrimaryButtonText = "OK" }.ShowAsync();
+                    }
+                    finally
+                    {
+                        BtnRestore.IsEnabled = true;
+                        BtnRestore.Content = "Restore Zip";
+                    }
+                }
+            }
+        }
+
+        private async Task ExtractBackupZip(StorageFile sourceZip)
+        {
+            var localFolder = ApplicationData.Current.LocalFolder;
+            
+            try { var w = await localFolder.GetFolderAsync("world"); await w.DeleteAsync(); } catch { }
+            try { var d = await localFolder.GetFolderAsync("data"); await d.DeleteAsync(); } catch { }
+            try { var conf = await localFolder.GetFileAsync("configuration.toml"); await conf.DeleteAsync(); } catch { }
+            try { var feat = await localFolder.GetFileAsync("features.toml"); await feat.DeleteAsync(); } catch { }
+
+            using (var stream = await sourceZip.OpenStreamForReadAsync())
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Read))
+            {
+                foreach (var entry in archive.Entries)
+                {
+                    if (entry.FullName.EndsWith("/")) continue;
+
+                    string fullPath = entry.FullName.Replace("/", "\\");
+                    string folderPath = Path.GetDirectoryName(fullPath);
+
+                    StorageFolder targetFolder = localFolder;
+                    if (!string.IsNullOrEmpty(folderPath))
+                    {
+                        string[] parts = folderPath.Split('\\');
+                        foreach (var part in parts)
+                        {
+                            targetFolder = await targetFolder.CreateFolderAsync(part, CreationCollisionOption.OpenIfExists);
+                        }
+                    }
+
+                    var file = await targetFolder.CreateFileAsync(Path.GetFileName(fullPath), CreationCollisionOption.ReplaceExisting);
+                    using (var entryStream = entry.Open())
+                    using (var fileStream = await file.OpenStreamForWriteAsync())
+                    {
+                        await entryStream.CopyToAsync(fileStream);
+                    }
+                }
+            }
+        }
+
         private async System.Threading.Tasks.Task BindToggle(ToggleSwitch ts, string section, string key)
         {
             string val = await ConfigHelper.GetValueAsync(section, key);
@@ -93,7 +292,6 @@ namespace Universal_Pumpkin
             }
         }
 
-        // ... Event Handlers ...
         private async void Setting_Toggled(object sender, RoutedEventArgs e)
         {
             if (_loading) return;
