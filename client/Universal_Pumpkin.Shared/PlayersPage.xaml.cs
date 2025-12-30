@@ -92,27 +92,43 @@ namespace Universal_Pumpkin
             if (App.Server.IsRunning)
             {
                 var online = App.Server.GetPlayers();
-
                 var candidates = online.Where(p => p.PermissionLevel == 0).ToList();
-
-                if (candidates.Count == 0)
-                {
-                    await ShowAlert("No eligible players are online to OP.");
-                    return;
-                }
-
+                if (candidates.Count == 0) { await ShowAlert("No eligible players online."); return; }
                 var selected = await PromptPlayerSelection(candidates, "Select Player to OP");
-
-                if (selected != null)
-                {
-                    App.Server.SendCommand($"op {selected.Username}");
-                    await Task.Delay(500);
-                    RefreshManagementData();
-                }
+                if (selected != null) { App.Server.SendCommand($"op {selected.Username}"); await Task.Delay(500); RefreshManagementData(); }
             }
             else
             {
-                await ShowAlert("To add an OP offline, you must manually edit ops.json. Please start the server to use this feature.");
+                string name = await PromptString("Enter Mojang Username to OP:");
+                if (string.IsNullOrWhiteSpace(name)) return;
+
+                string uuid = await MojangApiHelper.GetUuidFromUsernameAsync(name);
+
+                if (uuid != null)
+                {
+                    var list = await ManagementHelper.LoadOps();
+                    if (!list.Any(x => x.Uuid == uuid))
+                    {
+                        list.Add(new OpEntry
+                        {
+                            Name = name,
+                            Uuid = uuid,
+                            Level = 4,
+                            BypassesPlayerLimit = false
+                        });
+                        await ManagementHelper.SaveOps(list);
+                        RefreshManagementData();
+                        await ShowAlert($"Successfully added {name} as OP (Offline Mode).");
+                    }
+                    else
+                    {
+                        await ShowAlert($"{name} is already an OP.");
+                    }
+                }
+                else
+                {
+                    await ShowAlert($"Could not resolve UUID for '{name}' via Mojang API. Check your internet connection or spelling. (Offline addition requires a valid paid Minecraft account).");
+                }
             }
         }
 
@@ -291,23 +307,37 @@ namespace Universal_Pumpkin
             if (App.Server.IsRunning)
             {
                 var online = App.Server.GetPlayers();
-
-                if (online.Count == 0)
-                {
-                    await ShowAlert("No players are currently online to ban via selector. To ban an offline player by name, please use the Console page.");
-                    return;
-                }
-
+                if (online.Count == 0) { await ShowAlert("No players online."); return; }
                 var selected = await PromptPlayerSelection(online, "Select Player to Ban");
-
-                if (selected != null)
-                {
-                    await ShowBanDialog(selected.Username);
-                }
+                if (selected != null) await ShowBanDialog(selected.Username);
             }
             else
             {
-                await ShowAlert("Please start the server to ban players (UUID lookup required).");
+                string name = await PromptString("Enter Mojang Username to Ban:");
+                if (string.IsNullOrWhiteSpace(name)) return;
+
+                string uuid = await MojangApiHelper.GetUuidFromUsernameAsync(name);
+
+                if (uuid != null)
+                {
+                    var list = await ManagementHelper.LoadBans();
+                    list.Add(new BanEntry
+                    {
+                        Name = name,
+                        Uuid = uuid,
+                        Created = DateTime.Now.ToString("yyyy-MM-dd HH:mm:sszzz"),
+                        Source = "Console",
+                        Expires = "forever",
+                        Reason = "Banned via Offline Console"
+                    });
+                    await ManagementHelper.SaveBans(list);
+                    RefreshManagementData();
+                    await ShowAlert($"Successfully banned {name} (Offline Mode).");
+                }
+                else
+                {
+                    await ShowAlert($"Could not resolve UUID for '{name}'. Unable to ban offline.");
+                }
             }
         }
 
