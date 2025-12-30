@@ -13,7 +13,7 @@ LegalCopyright = "Copyright © 2025 Aleksander Medvedev"
 
 # Required to expose pumpkin plugin API
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["rlib", "cdylib"]
 doctest = false
 
 [[bin]]
