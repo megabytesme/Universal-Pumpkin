@@ -77,6 +77,17 @@ namespace Universal_Pumpkin
 
             _serverTask = Task.Run(async () =>
             {
+                bool allowed = await Helpers.BackgroundKeeper.RequestKeepAlive();
+
+                if (!allowed)
+                {
+                    GlobalLogEvent?.Invoke(this, "[Warning] Background execution denied by OS. App may suspend if minimized.");
+                }
+                else
+                {
+                    GlobalLogEvent?.Invoke(this, "[System] Background execution active.");
+                }
+
                 int result = pumpkin_run_from_config_dir(folder.Path);
 
                 if (_pendingDeops.Count > 0)
@@ -176,7 +187,13 @@ namespace Universal_Pumpkin
             catch { return null; }
         }
 
-        public void StopServer() => pumpkin_request_stop();
+        public void StopServer()
+        {
+            pumpkin_request_stop();
+            Helpers.BackgroundKeeper.StopKeepAlive();
+
+            GlobalLogEvent?.Invoke(this, "[System] Background execution released.");
+        }
         public void SendCommand(string command) => pumpkin_inject_command(command);
 
         private static void OnLogCallback(IntPtr messagePtr)
