@@ -1,11 +1,11 @@
 ﻿using System;
 using Windows.ApplicationModel.Core;
-using Windows.Foundation.Metadata;
 using Windows.Storage;
 using Windows.System;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
+using Windows.UI.Xaml.Documents;
 
 namespace Universal_Pumpkin
 {
@@ -191,6 +191,114 @@ namespace Universal_Pumpkin
         private async void BtnOpen_Click(object sender, RoutedEventArgs e)
         {
             await Launcher.LaunchFolderAsync(ApplicationData.Current.LocalFolder);
+        }
+
+        private async void AboutButton_Click(object sender, RoutedEventArgs e)
+        {
+            var scrollContent = new ScrollViewer()
+            {
+                Content = new TextBlock()
+                {
+                    Inlines =
+                    {
+                        new Run() { Text = "Universal Pumpkin", FontWeight = Windows.UI.Text.FontWeights.Bold, FontSize = 18 },
+                        new LineBreak(),
+                        new Run() { Text = $"Version {GetAppVersion()} ({GetAppName()})" },
+                        new LineBreak(),
+                        new Run() { Text = "Copyright © 2025 MegaBytesMe" },
+                        new LineBreak(),
+                        new LineBreak(),
+                        new Run() { Text = "Universal Pumpkin is a native, high-performance Minecraft server wrapper for UWP. It brings the power of the Rust-based " },
+                        new Hyperlink()
+                        {
+                            NavigateUri = new Uri("https://github.com/Pumpkin-MC/Pumpkin"),
+                            Inlines = { new Run() { Text = "Pumpkin" } }
+                        },
+                        new Run() { Text = " engine to devices supporting the Universal Windows Platform (UWP)." },
+                        new LineBreak(),
+                        new LineBreak(),
+                        new Run() { Text = "Source code available on " },
+                        new Hyperlink()
+                        {
+                            NavigateUri = new Uri("https://github.com/megabytesme/Universal-Pumpkin"),
+                            Inlines = { new Run() { Text = "GitHub" } },
+                        },
+                        new LineBreak(),
+                        new Run() { Text = "Found a bug? Report it here: " },
+                        new Hyperlink()
+                        {
+                            NavigateUri = new Uri("https://github.com/megabytesme/Universal-Pumpkin/issues"),
+                            Inlines = { new Run() { Text = "Issue Tracker" } },
+                        },
+                        new LineBreak(),
+                        new LineBreak(),
+                        new Run() { Text = "Like what you see? Consider supporting me on " },
+                        new Hyperlink()
+                        {
+                            NavigateUri = new Uri("https://ko-fi.com/megabytesme"),
+                            Inlines = { new Run() { Text = "Ko-fi!" } },
+                        },
+                        new LineBreak(),
+                        new LineBreak(),
+                        new Hyperlink()
+                        {
+                            NavigateUri = new Uri("https://github.com/megabytesme/Universal-Pumpkin/blob/master/LICENSE.md"),
+                            Inlines = { new Run() { Text = "License:" } },
+                        },
+                        new LineBreak(),
+                        new Run() { Text = "• App (Client): CC BY-NC-SA 4.0" },
+                        new LineBreak(),
+                        new Run() { Text = "• Server Core (Rust): MIT (Pumpkin Project)" },
+                    },
+                    TextWrapping = TextWrapping.Wrap,
+                },
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = "About",
+                Content = scrollContent,
+                PrimaryButtonText = "OK"
+            };
+
+            await dialog.ShowAsync();
+        }
+
+        private async void DisclaimerButton_Click(object sender, RoutedEventArgs e)
+        {
+            var textBlock = new TextBlock { TextWrapping = TextWrapping.Wrap };
+
+            textBlock.Inlines.Add(new Run { Text = "This is an unofficial, third-party server implementation. This project is " });
+            textBlock.Inlines.Add(new Run { Text = "not affiliated with, endorsed, or sponsored by Mojang Studios, Microsoft, or the official Pumpkin project.", FontWeight = Windows.UI.Text.FontWeights.Bold });
+            textBlock.Inlines.Add(new LineBreak());
+            textBlock.Inlines.Add(new LineBreak());
+            textBlock.Inlines.Add(new Run { Text = "\"Minecraft\" is a trademark of Mojang Synergies AB." });
+
+            var dialog = new ContentDialog
+            {
+                Title = "Disclaimer",
+                Content = new ScrollViewer { Content = textBlock },
+                PrimaryButtonText = "I Understand",
+            };
+            await dialog.ShowAsync();
+        }
+
+        private string GetAppName()
+        {
+#if UWP_1507
+            return "1507_UWP";
+#else
+            return "1709_UWP";
+#endif
+        }
+
+        private string GetAppVersion()
+        {
+#if UWP_1507
+            return "1.0.0.0";
+#else
+            return "2.0.0.0";
+#endif
         }
     }
 }
