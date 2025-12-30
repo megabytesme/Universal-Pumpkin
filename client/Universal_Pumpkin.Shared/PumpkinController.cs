@@ -47,6 +47,8 @@ namespace Universal_Pumpkin
 
         private static LogCallback _loggerDelegate;
 
+        private readonly HashSet<string> _pendingDeops = new HashSet<string>();
+
         public PumpkinController()
         {
             if (_loggerDelegate == null)
@@ -70,9 +72,24 @@ namespace Universal_Pumpkin
 
             var folder = ApplicationData.Current.LocalFolder;
 
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 int result = pumpkin_run_from_config_dir(folder.Path);
+
+                if (_pendingDeops.Count > 0)
+                {
+                    try
+                    {
+                        var ops = await ManagementHelper.LoadOps();
+                        int removed = ops.RemoveAll(x => _pendingDeops.Contains(x.Name));
+                        if (removed > 0)
+                        {
+                            await ManagementHelper.SaveOps(ops);
+                            OnGlobalLog(this, $"[System] Processed {removed} pending deops during shutdown.");
+                        }
+                    }
+                    catch { /* Ignore IO errors on shutdown */ }
+                }
 
                 IsRunning = false;
                 GlobalLogEvent -= OnGlobalLog;
@@ -80,6 +97,19 @@ namespace Universal_Pumpkin
             });
 
             return Task.CompletedTask;
+        }
+
+        public void QueueOfflineDeop(string username)
+        {
+            lock (_pendingDeops)
+            {
+                _pendingDeops.Add(username);
+            }
+        }
+
+        public bool IsDeopQueued(string username)
+        {
+            lock (_pendingDeops) return _pendingDeops.Contains(username);
         }
 
         public List<PlayerData> GetPlayers()
