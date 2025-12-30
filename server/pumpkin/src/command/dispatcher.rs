@@ -81,7 +81,7 @@ impl CommandDispatcher {
     /// # todo
     /// - make this less ugly
     /// - do not query suggestions for the same consumer multiple times just because they are on different paths through the tree
-    pub(crate) async fn find_suggestions<'a>(
+    pub async fn find_suggestions<'a>(
         &'a self,
         src: &CommandSender,
         server: &'a Server,
