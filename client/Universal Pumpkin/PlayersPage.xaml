@@ -70,6 +70,41 @@
                         Tag="{Binding}"/>
             </Grid>
         </DataTemplate>
+
+        <DataTemplate x:Key="PlayerPickerTemplate"
+                      x:DataType="models:PlayerData">
+            <Grid Padding="8,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        Width="32"
+                        Height="32"
+                        Background="#FF2D2D2D"
+                        Margin="0,0,12,0"
+                        VerticalAlignment="Center">
+                    <Grid>
+                        <Rectangle Fill="#FFB07F5E"
+                                   Margin="2"/>
+                        <Image Source="{x:Bind HeadUrl}"
+                               Margin="2"/>
+                    </Grid>
+                </Border>
+
+                <StackPanel Grid.Column="1"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="{x:Bind Username}"
+                               FontWeight="SemiBold"
+                               FontSize="15"/>
+                    <TextBlock Text="{x:Bind Uuid}"
+                               FontSize="10"
+                               Foreground="Gray"
+                               Opacity="0.8"/>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
     </Page.Resources>
 
     <Grid Background="Transparent">
@@ -121,12 +156,18 @@
                                                 <Grid>
                                                     <Rectangle Fill="#FFB07F5E"
                                                                Margin="4"/>
-                                                    <TextBlock Text="{x:Bind Platform}"
-                                                               FontSize="10"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Bottom"
-                                                               Foreground="White"
-                                                               Margin="0,0,0,2"/>
+                                                    <Image Source="{x:Bind HeadUrl}"
+                                                           Margin="4"
+                                                           Stretch="UniformToFill"/>
+                                                    <Border VerticalAlignment="Bottom"
+                                                            Background="#AA000000">
+                                                        <TextBlock Text="{x:Bind Platform}"
+                                                                   FontSize="10"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Bottom"
+                                                                   Foreground="White"
+                                                                   Margin="0,0,0,2"/>
+                                                    </Border>
                                                 </Grid>
                                             </Border>
                                             <Border Background="#FFFF5555"
@@ -228,8 +269,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <CommandBar Background="Transparent"
-                                DefaultLabelPosition="Right">
+                    <CommandBar Background="Transparent">
                         <AppBarButton Icon="Add"
                                       Label="Add Op"
                                       Click="BtnAddOp_Click"/>
@@ -244,10 +284,26 @@
                             <DataTemplate x:DataType="models:OpEntry">
                                 <Grid Padding="12">
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="200"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel HorizontalAlignment="Left">
+
+                                    <Border Width="32"
+                                            Height="32"
+                                            Background="#FF2D2D2D"
+                                            Margin="0,0,12,0"
+                                            VerticalAlignment="Center">
+                                        <Grid>
+                                            <Rectangle Fill="#FFB07F5E"
+                                                       Margin="2"/>
+                                            <Image Source="{x:Bind HeadUrl}"
+                                                   Margin="2"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <StackPanel Grid.Column="1"
+                                                VerticalAlignment="Center">
                                         <TextBlock Text="{x:Bind Name}"
                                                    FontWeight="Bold"/>
                                         <TextBlock Text="{x:Bind Uuid}"
@@ -256,9 +312,9 @@
                                         <TextBlock Text="Queued for Removal"
                                                    FontSize="10"
                                                    Foreground="Orange"
-                                                   Visibility="{x:Bind IsPendingRemoval}"/>
+                                                   Visibility="{x:Bind IsPendingRemoval, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                     </StackPanel>
-                                    <Button Grid.Column="1"
+                                    <Button Grid.Column="2"
                                             Content="Remove"
                                             Click="BtnRemoveOp_Click"
                                             Tag="{x:Bind}"
@@ -278,8 +334,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <CommandBar Background="Transparent"
-                                DefaultLabelPosition="Right">
+                    <CommandBar Background="Transparent">
                         <AppBarButton Icon="Add"
                                       Label="Ban Player"
                                       Click="BtnAddBan_Click"/>
@@ -294,20 +349,38 @@
                             <DataTemplate x:DataType="models:BanEntry">
                                 <Grid Padding="12">
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="200"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel>
+
+                                    <Border Width="32"
+                                            Height="32"
+                                            Background="#FF2D2D2D"
+                                            Margin="0,0,12,0"
+                                            VerticalAlignment="Center">
+                                        <Grid>
+                                            <Rectangle Fill="#FFB07F5E"
+                                                       Margin="2"/>
+                                            <Image Source="{x:Bind HeadUrl}"
+                                                   Margin="2"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <StackPanel Grid.Column="1"
+                                                VerticalAlignment="Center">
                                         <TextBlock Text="{x:Bind Name}"
                                                    FontWeight="Bold"/>
                                         <TextBlock Text="{x:Bind Reason}"
                                                    Foreground="OrangeRed"
-                                                   FontSize="12"/>
+                                                   FontSize="12"
+                                                   TextTrimming="CharacterEllipsis"/>
                                         <TextBlock Text="{x:Bind Expires}"
                                                    Foreground="Gray"
                                                    FontSize="10"/>
                                     </StackPanel>
-                                    <Button Grid.Column="1"
+
+                                    <Button Grid.Column="2"
                                             Content="Pardon"
                                             Click="BtnRemoveBan_Click"
                                             Tag="{x:Bind}"

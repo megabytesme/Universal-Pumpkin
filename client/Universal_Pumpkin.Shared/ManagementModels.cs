@@ -8,9 +8,13 @@ namespace Universal_Pumpkin.Models
         [JsonProperty("uuid")] public string Uuid { get; set; }
         [JsonProperty("name")] public string Name { get; set; }
         [JsonProperty("level")] public int Level { get; set; }
-        [JsonProperty("bypassesPlayerLimit")] public bool BypassesPlayerLimit { get; set; }
+        [JsonProperty("bypasses_player_limit")] public bool BypassesPlayerLimit { get; set; }
 
         [JsonIgnore] public bool IsPendingRemoval { get; set; }
+        [JsonIgnore]
+        public string HeadUrl => string.IsNullOrEmpty(Uuid) 
+            ? null 
+            : $"https://api.mineatar.io/face/{Uuid}?scale=8&overlay=true";
     }
 
     public class BanEntry
@@ -21,6 +25,11 @@ namespace Universal_Pumpkin.Models
         [JsonProperty("source")] public string Source { get; set; }
         [JsonProperty("expires")] public string Expires { get; set; }
         [JsonProperty("reason")] public string Reason { get; set; }
+
+        [JsonIgnore]
+        public string HeadUrl => string.IsNullOrEmpty(Uuid) 
+            ? null 
+            : $"https://api.mineatar.io/face/{Uuid}?scale=8&overlay=true";
     }
 
     public class IpBanEntry

@@ -33,6 +33,18 @@ namespace Universal_Pumpkin.Models
         [JsonProperty("dimension")] public string Dimension { get; set; }
         [JsonProperty("is_sneaking")] public bool IsSneaking { get; set; }
         [JsonProperty("is_sprinting")] public bool IsSprinting { get; set; }
+
+        [JsonIgnore]
+        public string HeadUrl
+        {
+            get
+            {
+                if (Platform == "Bedrock") return null;
+                if (string.IsNullOrEmpty(Uuid)) return null;
+
+                return $"https://api.mineatar.io/face/{Uuid}?scale=8&overlay=true";
+            }
+        }
     }
 
     public class ServerMetrics
