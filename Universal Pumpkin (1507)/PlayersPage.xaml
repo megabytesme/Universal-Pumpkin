@@ -11,6 +11,8 @@
 
     <Page.Resources>
         <local:OpLevelToVisConverter x:Key="OpLevelToVisConverter"/>
+        <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
+        <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
 
         <MenuFlyout x:Key="PlayerContextMenu">
             <MenuFlyoutItem Text="Operator (OP)"
@@ -40,161 +42,328 @@
             <MenuFlyoutItem Text="Ban IP Address"
                             Click="Menu_BanIp_Click"/>
         </MenuFlyout>
+
+        <DataTemplate x:Key="ManagementItemTemplate">
+            <Grid Padding="12"
+                  Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                  Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="{Binding Name}"
+                               FontWeight="Bold"
+                               FontSize="16"/>
+                    <TextBlock Text="{Binding Uuid}"
+                               FontSize="12"
+                               Foreground="Gray"/>
+                    <TextBlock Text="{Binding Reason}"
+                               FontSize="12"
+                               Foreground="OrangeRed"
+                               Visibility="{Binding Reason, Converter={StaticResource OpLevelToVisConverter}}"/>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Content="Remove"
+                        Click="BtnRemoveEntry_Click"
+                        Tag="{Binding}"/>
+            </Grid>
+        </DataTemplate>
     </Page.Resources>
 
     <Grid Background="Transparent">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        <Pivot x:Name="MainPivot"
+               SelectionChanged="MainPivot_SelectionChanged">
+            <PivotItem Header="Online">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-        <TextBlock Text="Online Players"
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   Margin="24,24,0,12"
-                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
+                    <CommandBar Background="Transparent">
+                        <AppBarButton Icon="Refresh"
+                                      Label="Refresh"
+                                      Click="BtnRefresh_Click"/>
+                    </CommandBar>
 
-        <GridView x:Name="PlayerGrid"
-                  Grid.Row="1"
-                  Padding="12"
-                  SelectionMode="None"
-                  IsItemClickEnabled="False"
-                  ItemsSource="{x:Bind PlayersList}">
+                    <GridView x:Name="PlayerGrid"
+                              Grid.Row="1"
+                              Padding="12"
+                              SelectionMode="None"
+                              IsItemClickEnabled="False"
+                              ItemsSource="{x:Bind PlayersList}">
+                        <GridView.ItemTemplate>
+                            <DataTemplate x:DataType="models:PlayerData">
+                                <Border Width="300"
+                                        Height="120"
+                                        Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                                        BorderBrush="#30FFFFFF"
+                                        BorderThickness="1"
+                                        Margin="6"
+                                        RightTapped="Player_RightTapped"
+                                        Holding="Player_Holding"
+                                        FlyoutBase.AttachedFlyout="{StaticResource PlayerContextMenu}">
 
-            <GridView.ItemTemplate>
-                <DataTemplate x:DataType="models:PlayerData">
-                    <Border Width="300"
-                            Height="110"
-                            Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
-                            BorderBrush="#30FFFFFF"
-                            BorderThickness="1"
-                            Margin="6"
-                            RightTapped="Player_RightTapped"
-                            Holding="Player_Holding"
-                            FlyoutBase.AttachedFlyout="{StaticResource PlayerContextMenu}">
+                                    <Grid Padding="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
 
-                        <Grid Padding="12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Column="0"
-                                        VerticalAlignment="Top">
-                                <Border Width="48"
-                                        Height="48"
-                                        Background="#FF2D2D2D">
-                                    <Grid>
-                                        <Rectangle Fill="#FFB07F5E"
-                                                   Margin="4"/>
-                                        <TextBlock Text="{x:Bind Platform}"
-                                                   FontSize="10"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Bottom"
-                                                   Foreground="White"
-                                                   Margin="0,0,0,2"/>
-                                    </Grid>
-                                </Border>
-
-                                <Border Background="#FFFF5555"
-                                        Margin="0,4,0,0"
-                                        Padding="2"
-                                        Visibility="{x:Bind PermissionLevel, Converter={StaticResource OpLevelToVisConverter}}">
-                                    <TextBlock Text="OP"
-                                               FontSize="10"
-                                               FontWeight="Bold"
-                                               Foreground="White"
-                                               HorizontalAlignment="Center"/>
-                                </Border>
-
-                                <Border Background="#FF555555"
-                                        Margin="0,8,0,0"
-                                        Padding="2">
-                                    <TextBlock Text="{x:Bind Gamemode}"
-                                               FontSize="10"
-                                               Foreground="#FFFFAA00"
-                                               HorizontalAlignment="Center"/>
-                                </Border>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="1"
-                                        Margin="12,0,0,0">
-                                <TextBlock Text="{x:Bind Username}"
-                                           FontSize="18"
-                                           FontWeight="SemiBold"
-                                           Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
-                                           TextTrimming="CharacterEllipsis"/>
-
-                                <TextBlock Text="{x:Bind Uuid}"
-                                           FontSize="10"
-                                           Foreground="Gray"
-                                           TextTrimming="CharacterEllipsis"
-                                           Opacity="0.7"/>
-
-                                <Grid Margin="0,8,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Orientation="Horizontal"
-                                                Grid.Column="0">
-                                        <TextBlock Text="♥"
-                                                   Foreground="#FFFF5555"
-                                                   Margin="0,0,4,0"/>
-                                        <TextBlock Text="{x:Bind Health}"
-                                                   Foreground="#FFFF5555"/>
-                                    </StackPanel>
-
-                                    <StackPanel Grid.Column="1"
-                                                VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="✳"
-                                                       Foreground="#FF55FF55"
-                                                       Margin="0,0,4,0"/>
-                                            <TextBlock Text="{x:Bind ExpLevel}"
-                                                       Foreground="#FF55FF55"
-                                                       FontWeight="Bold"/>
+                                        <StackPanel Grid.Column="0"
+                                                    VerticalAlignment="Top">
+                                            <Border Width="48"
+                                                    Height="48"
+                                                    Background="#FF2D2D2D">
+                                                <Grid>
+                                                    <Rectangle Fill="#FFB07F5E"
+                                                               Margin="4"/>
+                                                    <TextBlock Text="{x:Bind Platform}"
+                                                               FontSize="10"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Bottom"
+                                                               Foreground="White"
+                                                               Margin="0,0,0,2"/>
+                                                </Grid>
+                                            </Border>
+                                            <Border Background="#FFFF5555"
+                                                    Margin="0,4,0,0"
+                                                    Padding="2"
+                                                    Visibility="{x:Bind PermissionLevel, Converter={StaticResource OpLevelToVisConverter}}">
+                                                <TextBlock Text="OP"
+                                                           FontSize="10"
+                                                           FontWeight="Bold"
+                                                           Foreground="White"
+                                                           HorizontalAlignment="Center"/>
+                                            </Border>
+                                            <Border Background="#FF555555"
+                                                    Margin="0,8,0,0"
+                                                    Padding="2">
+                                                <TextBlock Text="{x:Bind Gamemode}"
+                                                           FontSize="10"
+                                                           Foreground="#FFFFAA00"
+                                                           HorizontalAlignment="Center"/>
+                                            </Border>
                                         </StackPanel>
 
-                                        <ProgressBar Value="{x:Bind ExpProgress}"
-                                                     Maximum="1.0"
-                                                     Height="4"
-                                                     Foreground="#FF55FF55"
-                                                     Background="#3355FF55"
-                                                     Margin="0,2,0,0"/>
+                                        <StackPanel Grid.Column="1"
+                                                    Margin="12,0,0,0">
+                                            <TextBlock Text="{x:Bind Username}"
+                                                       FontSize="18"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{x:Bind Uuid}"
+                                                       FontSize="10"
+                                                       Foreground="Gray"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Opacity="0.7"/>
+                                            <Grid Margin="0,8,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Orientation="Horizontal"
+                                                            Grid.Column="0">
+                                                    <TextBlock Text="♥"
+                                                               Foreground="#FFFF5555"
+                                                               Margin="0,0,4,0"/>
+                                                    <TextBlock Text="{x:Bind Health}"
+                                                               Foreground="#FFFF5555"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1"
+                                                            VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="✳"
+                                                                   Foreground="#FF55FF55"
+                                                                   Margin="0,0,4,0"/>
+                                                        <TextBlock Text="{x:Bind ExpLevel}"
+                                                                   Foreground="#FF55FF55"
+                                                                   FontWeight="Bold"/>
+                                                    </StackPanel>
+                                                    <ProgressBar Value="{x:Bind ExpProgress}"
+                                                                 Maximum="1.0"
+                                                                 Height="4"
+                                                                 Foreground="#FF55FF55"
+                                                                 Background="#3355FF55"
+                                                                 Margin="0,2,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                            <TextBlock FontSize="11"
+                                                       Margin="0,4,0,0"
+                                                       FontFamily="Consolas">
+                                                <Run Text="X:"
+                                                     Foreground="Gray"/><Run Text="{x:Bind Position.FmtX}"
+                                                                             Foreground="White"/>
+                                                <Run Text=" Y:"
+                                                     Foreground="Gray"/><Run Text="{x:Bind Position.FmtY}"
+                                                                             Foreground="White"/>
+                                                <Run Text=" Z:"
+                                                     Foreground="Gray"/><Run Text="{x:Bind Position.FmtZ}"
+                                                                             Foreground="White"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </GridView.ItemTemplate>
+                    </GridView>
+                    <TextBlock x:Name="NoPlayersText"
+                               Grid.Row="1"
+                               Text="No players online"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Foreground="Gray"
+                               FontSize="20"
+                               Visibility="Collapsed"/>
+                </Grid>
+            </PivotItem>
+
+            <PivotItem Header="Operators">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <CommandBar Background="Transparent">
+                        <AppBarButton Icon="Add"
+                                      Label="Add Op"
+                                      Click="BtnAddOp_Click"/>
+                        <AppBarButton Icon="Refresh"
+                                      Label="Refresh"
+                                      Click="BtnRefreshManagement_Click"/>
+                    </CommandBar>
+                    <ListView x:Name="ListOps"
+                              Grid.Row="1"
+                              SelectionMode="None">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:OpEntry">
+                                <Grid Padding="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel HorizontalAlignment="Left">
+                                        <TextBlock Text="{x:Bind Name}"
+                                                   FontWeight="Bold"/>
+                                        <TextBlock Text="{x:Bind Uuid}"
+                                                   FontSize="12"
+                                                   Foreground="Gray"/>
+                                        <TextBlock Text="Queued for Removal"
+                                                   FontSize="10"
+                                                   Foreground="Orange"
+                                                   Visibility="{x:Bind IsPendingRemoval, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                     </StackPanel>
+                                    <Button Grid.Column="1"
+                                            Content="Remove"
+                                            Click="BtnRemoveOp_Click"
+                                            Tag="{x:Bind}"
+                                            HorizontalAlignment="Right"
+                                            Margin="25,0"
+                                            IsEnabled="{x:Bind IsPendingRemoval, Converter={StaticResource InverseBoolConverter}, Mode=OneWay}"/>
                                 </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </PivotItem>
 
-                                <TextBlock FontSize="11"
-                                           Margin="0,4,0,0"
-                                           FontFamily="Consolas">
-                                    <Run Text="X:"
-                                         Foreground="Gray"/>
-                                    <Run Text="{x:Bind Position.FmtX}"
-                                         Foreground="White"/>
-                                    <Run Text="Y:"
-                                         Foreground="Gray"/>
-                                    <Run Text="{x:Bind Position.FmtY}"
-                                         Foreground="White"/>
-                                    <Run Text="Z:"
-                                         Foreground="Gray"/>
-                                    <Run Text="{x:Bind Position.FmtZ}"
-                                         Foreground="White"/>
-                                </TextBlock>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </DataTemplate>
-            </GridView.ItemTemplate>
-        </GridView>
+            <PivotItem Header="Bans">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <CommandBar Background="Transparent">
+                        <AppBarButton Icon="Add"
+                                      Label="Ban Player"
+                                      Click="BtnAddBan_Click"/>
+                        <AppBarButton Icon="Refresh"
+                                      Label="Refresh"
+                                      Click="BtnRefreshManagement_Click"/>
+                    </CommandBar>
+                    <ListView x:Name="ListBans"
+                              Grid.Row="1"
+                              SelectionMode="None">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:BanEntry">
+                                <Grid Padding="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{x:Bind Name}"
+                                                   FontWeight="Bold"/>
+                                        <TextBlock Text="{x:Bind Reason}"
+                                                   Foreground="OrangeRed"
+                                                   FontSize="12"/>
+                                        <TextBlock Text="{x:Bind Expires}"
+                                                   Foreground="Gray"
+                                                   FontSize="10"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1"
+                                            Content="Pardon"
+                                            Click="BtnRemoveBan_Click"
+                                            Tag="{x:Bind}"
+                                            HorizontalAlignment="Right"
+                                            Margin="25,0"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </PivotItem>
 
-        <TextBlock x:Name="NoPlayersText"
-                   Grid.Row="1"
-                   Text="No players online"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   Foreground="Gray"
-                   FontSize="20"
-                   Visibility="Collapsed"/>
+            <PivotItem Header="IP Bans">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <CommandBar Background="Transparent">
+                        <AppBarButton Icon="Add"
+                                      Label="Ban IP"
+                                      Click="BtnAddIpBan_Click"/>
+                        <AppBarButton Icon="Refresh"
+                                      Label="Refresh"
+                                      Click="BtnRefreshManagement_Click"/>
+                    </CommandBar>
+                    <ListView x:Name="ListIpBans"
+                              Grid.Row="1"
+                              SelectionMode="None">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:IpBanEntry">
+                                <Grid Padding="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="{x:Bind Ip}"
+                                                   FontWeight="Bold"/>
+                                        <TextBlock Text="{x:Bind Reason}"
+                                                   Foreground="OrangeRed"
+                                                   FontSize="12"/>
+                                        <TextBlock Text="{x:Bind Expires}"
+                                                   Foreground="Gray"
+                                                   FontSize="10"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1"
+                                            Content="Pardon"
+                                            Click="BtnRemoveIpBan_Click"
+                                            Tag="{x:Bind}"
+                                            HorizontalAlignment="Right"
+                                            Margin="25,0"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </PivotItem>
+        </Pivot>
     </Grid>
 </Page>
