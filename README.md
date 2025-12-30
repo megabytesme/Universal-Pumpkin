@@ -8,7 +8,7 @@
 
 **Universal Pumpkin** is a native, high-performance Minecraft server client for the Universal Windows Platform (UWP). It wraps the lightning-fast **Pumpkin** server engine (Rust) into a portable application that runs on everything supported by the Universal Windows Platform (UWP).
 
-**Disclaimer:** This is an unofficial, third-party server implementation. This project is not affiliated with, endorsed, or sponsored by Mojang Studios, Microsoft, or the official Pumpkin project. "Minecraft" is a trademark of Mojang Synergies AB. This software provides a clean-room implementation of the Minecraft protocol.
+**Disclaimer:** This is an unofficial, third-party server implementation. This project is not affiliated with, endorsed, or sponsored by Mojang Studios, Microsoft, or the official Pumpkin project. "Minecraft" is a trademark of Mojang Synergies AB.
 
 ## Features
 
