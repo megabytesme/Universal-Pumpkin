@@ -32,6 +32,9 @@ namespace Universal_Pumpkin
         private static extern IntPtr pumpkin_get_players_json();
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr pumpkin_get_metrics_json();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern void pumpkin_free_string(IntPtr ptr);
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -58,21 +61,25 @@ namespace Universal_Pumpkin
             }
         }
 
-        public async Task StartServerAsync()
+        public Task StartServerAsync()
         {
-            if (IsRunning) return;
-            IsRunning = true;
+            if (IsRunning) return Task.CompletedTask;
 
+            IsRunning = true;
             GlobalLogEvent += OnGlobalLog;
+
             var folder = ApplicationData.Current.LocalFolder;
 
-            await Task.Run(() =>
+            Task.Run(() =>
             {
                 int result = pumpkin_run_from_config_dir(folder.Path);
+
                 IsRunning = false;
                 GlobalLogEvent -= OnGlobalLog;
                 OnServerStopped?.Invoke(this, result);
             });
+
+            return Task.CompletedTask;
         }
 
         public List<PlayerData> GetPlayers()
@@ -98,6 +105,26 @@ namespace Universal_Pumpkin
                 System.Diagnostics.Debug.WriteLine($"Error fetching players: {ex.Message}");
                 return new List<PlayerData>();
             }
+        }
+
+        public ServerMetrics GetMetrics()
+        {
+            if (!IsRunning) return null;
+
+            IntPtr jsonPtr = IntPtr.Zero;
+            try
+            {
+                jsonPtr = pumpkin_get_metrics_json();
+                if (jsonPtr == IntPtr.Zero) return null;
+
+                string json = Marshal.PtrToStringAnsi(jsonPtr);
+                pumpkin_free_string(jsonPtr);
+
+                if (string.IsNullOrEmpty(json) || json == "{}") return null;
+
+                return JsonConvert.DeserializeObject<ServerMetrics>(json);
+            }
+            catch { return null; }
         }
 
         public void StopServer() => pumpkin_request_stop();

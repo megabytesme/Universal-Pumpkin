@@ -35,6 +35,18 @@ namespace Universal_Pumpkin.Models
         [JsonProperty("is_sprinting")] public bool IsSprinting { get; set; }
     }
 
+    public class ServerMetrics
+    {
+        [JsonProperty("tps")] public float TPS { get; set; }
+        [JsonProperty("mspt")] public float MSPT { get; set; }
+        [JsonProperty("tick_count")] public int TickCount { get; set; }
+        [JsonProperty("loaded_chunks")] public int LoadedChunks { get; set; }
+        [JsonProperty("player_count")] public int PlayerCount { get; set; }
+
+        [JsonIgnore] public string FmtTPS => TPS.ToString("0.0");
+        [JsonIgnore] public string FmtMSPT => MSPT.ToString("0.00") + "ms";
+    }
+
     public class CommandSuggestion
     {
         [JsonProperty("text")] public string Text { get; set; }

@@ -15,34 +15,73 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid x:Name="IpCard"
+        <Grid x:Name="StatusGrid"
               Grid.Row="0"
               Margin="15,15,15,0"
               Visibility="Collapsed"
               Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+              BorderBrush="{ThemeResource SystemControlBackgroundAccentBrush}"
+              BorderThickness="1"
               Padding="15">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Text="&#xEC27;"
-                       FontFamily="Segoe MDL2 Assets"
-                       FontSize="20"
-                       VerticalAlignment="Center"
-                       Margin="0,0,15,0"
-                       Foreground="{ThemeResource SystemControlBackgroundAccentBrush}"/>
-            <StackPanel Grid.Column="1"
-                        Orientation="Horizontal"
-                        Padding="8"
+            <StackPanel Grid.Column="0"
                         VerticalAlignment="Center">
-                <TextBlock Text="Server IP:"
+                <TextBlock Text="Server Address"
+                           FontSize="10"
                            Foreground="Gray"/>
                 <TextBlock x:Name="TxtIpAddress"
-                           Text="Loading..."
+                           Text="127.0.0.1"
                            FontWeight="Bold"
-                           IsTextSelectionEnabled="True"
-                           Margin="4,0,0,0"/>
+                           FontSize="16"
+                           IsTextSelectionEnabled="True"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1"
+                        Margin="24,0,0,0"
+                        VerticalAlignment="Center">
+                <TextBlock Text="TPS"
+                           FontSize="10"
+                           Foreground="Gray"
+                           HorizontalAlignment="Right"/>
+                <TextBlock x:Name="TxtTPS"
+                           Text="20.0"
+                           FontWeight="Bold"
+                           Foreground="#FF55FF55"
+                           HorizontalAlignment="Right"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2"
+                        Margin="24,0,0,0"
+                        VerticalAlignment="Center">
+                <TextBlock Text="MSPT"
+                           FontSize="10"
+                           Foreground="Gray"
+                           HorizontalAlignment="Right"/>
+                <TextBlock x:Name="TxtMSPT"
+                           Text="12.50ms"
+                           FontWeight="Bold"
+                           Foreground="White"
+                           HorizontalAlignment="Right"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="3"
+                        Margin="24,0,0,0"
+                        VerticalAlignment="Center">
+                <TextBlock Text="Mem"
+                           FontSize="10"
+                           Foreground="Gray"
+                           HorizontalAlignment="Right"/>
+                <TextBlock x:Name="TxtRAM"
+                           Text="150 MB"
+                           FontWeight="Bold"
+                           Foreground="White"
+                           HorizontalAlignment="Right"/>
             </StackPanel>
         </Grid>
 
