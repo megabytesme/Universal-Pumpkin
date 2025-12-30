@@ -43,19 +43,19 @@
 
                 <ListBox x:Name="NavListBox" SelectionChanged="NavListBox_SelectionChanged" Background="Transparent">
                     <ListBoxItem Tag="Console">
-                        <StackPanel Orientation="Horizontal" Padding="4">
+                        <StackPanel Orientation="Horizontal" Padding="2">
                             <TextBlock Text="&#xE7F8;" FontFamily="Segoe MDL2 Assets" FontSize="18" VerticalAlignment="Center"/>
                             <TextBlock Text="Console" VerticalAlignment="Center" Margin="16,0,0,0"/>
                         </StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="Players">
-                        <StackPanel Orientation="Horizontal" Padding="4">
+                        <StackPanel Orientation="Horizontal" Padding="2">
                             <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets" FontSize="18" VerticalAlignment="Center"/>
                             <TextBlock Text="Players" VerticalAlignment="Center" Margin="16,0,0,0"/>
                         </StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="Settings">
-                        <StackPanel Orientation="Horizontal" Padding="4">
+                        <StackPanel Orientation="Horizontal" Padding="2">
                             <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="18" VerticalAlignment="Center"/>
                             <TextBlock Text="Settings" VerticalAlignment="Center" Margin="16,0,0,0"/>
                         </StackPanel>
