@@ -24,7 +24,7 @@
 
 ## Build Guide
 
-Building Universal Pumpkin is unique because it combines a C# UWP Host with a Rust Dynamic Library (`pumpkin.dll`).
+Building Universal Pumpkin is unique because it combines a C# UWP Host with a Rust Dynamic Library (`pumpkin_uwp.dll`).
 
 ### Prerequisites
 
@@ -38,7 +38,7 @@ Building Universal Pumpkin is unique because it combines a C# UWP Host with a Ru
 
 
 ## **1. Building the Pumpkin Server Core (Rust)**  
-Pumpkin Core is written in Rust and compiled as a **UWP‑safe DLL** (`pumpkin.dll`).  
+Pumpkin Core is written in Rust and compiled as a **UWP‑safe DLL** (`pumpkin_uwp.dll`).  
 
 ### **Run the appropriate build script from the `/server` directory:**
 
@@ -52,7 +52,7 @@ Pumpkin Core is written in Rust and compiled as a **UWP‑safe DLL** (`pumpkin.d
 Each script outputs a DLL to:
 
 ```
-server/target_X/release/pumpkin.dll
+server/target_X/release/pumpkin_uwp.dll
 ```
 
 ## **2. Building the UWP Host App (C#)**  
@@ -63,7 +63,7 @@ UniversalPumpkin.sln
 ```
 
 ### **Steps:**
-1. Copy the generated `pumpkin.dll` into the **root directory** of the UWP project you intend to run.  
+1. Copy the generated `pumpkin_uwp.dll` into the **root directory** of the UWP project you intend to run.  
 2. In Visual Studio, set **Solution Platform** to match your target device:  
    - `ARM` → Windows 10 Mobile  
    - `ARM64` → HoloLens 2, Windows on ARM  
@@ -76,7 +76,7 @@ UniversalPumpkin.sln
 Universal Pumpkin runs Rust logic inside a UWP sandbox.
 
 ### **Pumpkin Server (Rust DLL)**
-- Compiled as `pumpkin.dll`
+- Compiled as `pumpkin_uwp.dll`
 - Exposes **C‑compatible FFI entry points**
 - Built with `--no-default-features` to avoid forbidden APIs
 - Handles world logic, chunk generation, heightmaps, etc.
