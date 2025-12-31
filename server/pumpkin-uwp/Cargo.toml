@@ -8,10 +8,12 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pumpkin = { path = "../pumpkin", default-features = false }
-pumpkin-config = { path = "../pumpkin-config" }
-pumpkin-protocol = { path = "../pumpkin-protocol" }
-pumpkin-util = { path = "../pumpkin-util" }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync"] }
-log = "0.4"
+pumpkin-config.workspace = true
+pumpkin-protocol.workspace = true
+pumpkin-util.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+log.workspace = true
+rustls.workspace = true
+rustls-rustcrypto.workspace = true

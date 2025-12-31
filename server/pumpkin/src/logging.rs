@@ -3,6 +3,7 @@
 
 use flate2::write::GzEncoder;
 use log::{LevelFilter, Log, Record};
+#[cfg(feature = "console")]
 use rustyline_async::Readline;
 use simplelog::{CombinedLogger, Config, SharedLogger, WriteLogger};
 use std::fmt::format;
@@ -18,7 +19,8 @@ const MAX_ATTEMPTS: u32 = 100;
 /// properly flush logs to the output while they happen instead of batched
 pub struct ReadlineLogWrapper {
     internal: Box<CombinedLogger>,
-    readline: std::sync::Mutex<Option<Readline>>,
+    #[cfg(feature = "console")]
+    readline: std::sync::Mutex<Option<rustyline_async::Readline>>,
 }
 
 struct GzipRollingLoggerData {
@@ -211,16 +213,18 @@ impl ReadlineLogWrapper {
     pub fn new(
         log: Box<dyn SharedLogger + 'static>,
         file_logger: Option<Box<dyn SharedLogger + 'static>>,
-        rl: Option<Readline>,
+        #[cfg(feature = "console")] rl: Option<rustyline_async::Readline>,
     ) -> Self {
         let loggers: Vec<Option<Box<dyn SharedLogger + 'static>>> = vec![Some(log), file_logger];
         Self {
             internal: CombinedLogger::new(loggers.into_iter().flatten().collect()),
+            #[cfg(feature = "console")]
             readline: std::sync::Mutex::new(rl),
         }
     }
 
-    pub fn take_readline(&self) -> Option<Readline> {
+    #[cfg(feature = "console")]
+    pub fn take_readline(&self) -> Option<rustyline_async::Readline> {
         self.readline
             .lock()
             .map_or_else(|_| None, |mut result| result.take())
@@ -229,17 +233,25 @@ impl ReadlineLogWrapper {
     // This isn't really dead code, just for some reason rust thinks that it might be.
     // Schroedinger's dead code -> expect warns unfulfilled lint expectation but removing it causes dead_code lint?
     #[allow(dead_code)]
-    pub(crate) fn return_readline(&self, rl: Readline) {
+    #[cfg(feature = "console")]
+    pub(crate) fn return_readline(&self, rl: rustyline_async::Readline) {
         if let Ok(mut result) = self.readline.lock() {
-            println!("Returned rl");
             let _ = result.insert(rl);
         }
     }
 
-    pub fn new_ffi_compatible(rl: Option<rustyline_async::Readline>) -> Self {
+    #[cfg(feature = "console")]
+    pub fn new_ffi_compatible(rl: Option<Readline>) -> Self {
         Self {
             internal: CombinedLogger::new(vec![]),
             readline: std::sync::Mutex::new(rl),
+        }
+    }
+
+    #[cfg(not(feature = "console"))]
+    pub fn new_ffi_compatible(_rl: Option<()>) -> Self {
+        Self {
+            internal: CombinedLogger::new(vec![]),
         }
     }
 }
@@ -248,19 +260,25 @@ impl ReadlineLogWrapper {
 impl Log for ReadlineLogWrapper {
     fn log(&self, record: &log::Record) {
         self.internal.log(record);
-        if let Ok(mut lock) = self.readline.lock()
-            && let Some(rl) = lock.as_mut()
+        #[cfg(feature = "console")]
         {
-            let _ = rl.flush();
+            if let Ok(mut lock) = self.readline.lock()
+                && let Some(rl) = lock.as_mut()
+            {
+                let _ = rl.flush();
+            }
         }
     }
 
     fn flush(&self) {
         self.internal.flush();
-        if let Ok(mut lock) = self.readline.lock()
-            && let Some(rl) = lock.as_mut()
+        #[cfg(feature = "console")]
         {
-            let _ = rl.flush();
+            if let Ok(mut lock) = self.readline.lock()
+                && let Some(rl) = lock.as_mut()
+            {
+                let _ = rl.flush();
+            }
         }
     }
 

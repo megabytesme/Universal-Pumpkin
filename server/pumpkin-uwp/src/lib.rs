@@ -334,6 +334,8 @@ pub extern "C" fn pumpkin_inject_command(cmd_utf8: *const c_char) {
 #[unsafe(no_mangle)]
 pub extern "C" fn pumpkin_run_from_config_dir(config_dir_utf8: *const c_char) -> i32 {
     let result = std::panic::catch_unwind(|| unsafe {
+        let _ = rustls_rustcrypto::provider().install_default();
+
         if config_dir_utf8.is_null() {
             return -1;
         }

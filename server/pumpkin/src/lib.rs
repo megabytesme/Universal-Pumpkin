@@ -16,9 +16,12 @@ use pumpkin_macros::send_cancellable;
 use pumpkin_protocol::ConnectionState::Play;
 use pumpkin_util::permission::{PermissionManager, PermissionRegistry};
 use pumpkin_util::text::TextComponent;
+#[cfg(feature = "console")]
 use rustyline_async::{Readline, ReadlineEvent};
 use std::collections::HashMap;
-use std::io::{Cursor, IsTerminal, stdin};
+#[cfg(feature = "console")]
+use std::io::IsTerminal;
+use std::io::{Cursor, stdin};
 use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
@@ -64,7 +67,7 @@ pub fn init_logger(
     external_callback: Option<crate::logging::LogCallbackFn>,
 ) {
     use crate::logging::{CallbackLogger, GzipRollingLogger, ReadlineLogWrapper};
-    use simplelog::{CombinedLogger, ConfigBuilder, SharedLogger, SimpleLogger};
+    use simplelog::{CombinedLogger, ConfigBuilder, SharedLogger};
 
     if !advanced_config.logging.enabled {
         let _ = LOGGER_IMPL.set(None);
@@ -125,28 +128,32 @@ pub fn init_logger(
         shared_loggers.push(CallbackLogger::new(level, log_config.clone(), cb));
     }
 
-    let (console_logger, rl): (Box<dyn SharedLogger>, _) =
+    #[cfg(feature = "console")]
+    let (console_logger, rl): (Box<dyn SharedLogger>, Option<Readline>) =
         if advanced_config.commands.use_tty && std::io::stdin().is_terminal() {
-            match rustyline_async::Readline::new("$ ".to_owned()) {
+            match Readline::new("$ ".to_owned()) {
                 Ok((rl, stdout)) => (
                     simplelog::WriteLogger::new(level, log_config, stdout),
                     Some(rl),
                 ),
                 Err(e) => {
-                    eprintln!(
+                    log::warn!(
                         "Failed to initialize console input ({e}); falling back to simple logger"
                     );
-                    (SimpleLogger::new(level, log_config), None)
+                    (simplelog::SimpleLogger::new(level, log_config), None)
                 }
             }
         } else {
-            (SimpleLogger::new(level, log_config), None)
+            (simplelog::SimpleLogger::new(level, log_config), None)
         };
+
+    #[cfg(not(feature = "console"))]
+    let (console_logger, rl): (Box<dyn SharedLogger>, Option<()>) =
+        (simplelog::SimpleLogger::new(level, log_config), None);
 
     shared_loggers.push(console_logger);
 
     let combined_boxed = CombinedLogger::new(shared_loggers);
-
     let _ = log::set_boxed_logger(combined_boxed);
     log::set_max_level(level);
 
@@ -194,17 +201,19 @@ impl PumpkinServer {
 
         let mut ticker = Ticker::new();
 
-        if server.advanced_config.commands.use_console
-            && let Some((wrapper, _)) = LOGGER_IMPL.wait()
-        {
-            if let Some(rl) = wrapper.take_readline() {
-                setup_console(rl, server.clone());
-            } else {
-                if server.advanced_config.commands.use_tty {
-                    log::warn!(
-                        "The input is not a TTY; falling back to simple logger and ignoring `use_tty` setting"
-                    );
+        if server.advanced_config.commands.use_console {
+            #[cfg(feature = "console")]
+            {
+                if let Some((wrapper, _)) = LOGGER_IMPL.wait() {
+                    if let Some(rl) = wrapper.take_readline() {
+                        setup_console(rl, server.clone());
+                    } else {
+                        setup_stdin_console(server.clone()).await;
+                    }
                 }
+            }
+            #[cfg(not(feature = "console"))]
+            {
                 setup_stdin_console(server.clone()).await;
             }
         }
@@ -346,6 +355,7 @@ impl PumpkinServer {
         log::info!("Completed save!");
 
         // Explicitly drop the line reader to return the terminal to the original state.
+        #[cfg(feature = "console")]
         if let Some((wrapper, _)) = LOGGER_IMPL.wait()
             && let Some(rl) = wrapper.take_readline()
         {
@@ -514,6 +524,7 @@ async fn setup_stdin_console(server: Arc<Server>) {
     });
 }
 
+#[cfg(feature = "console")]
 fn setup_console(rl: Readline, server: Arc<Server>) {
     // This needs to be async, or it will hog a thread.
     server.clone().spawn_task(async move {

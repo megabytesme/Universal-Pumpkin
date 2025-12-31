@@ -61,15 +61,14 @@ rand.workspace = true
 num-bigint.workspace = true
 
 # Console line reading
-rustyline-async.workspace = true
+rustyline-async = { workspace = true, optional = true }
 
 # encryption
 rsa = { workspace = true, features = ["sha1"] }
 pkcs8.workspace = true
 
 # authentication
-ureq = { workspace = true, features = ["json"] }
-
+ureq.workspace = true
 
 sha1.workspace = true
 
@@ -101,3 +100,5 @@ tempfile.workspace = true
 [features]
 console-subscriber = ["dep:console-subscriber"]
 tokio_taskdump = ["pumpkin-world/tokio_taskdump"]
+console = ["dep:rustyline-async"]
+default = ["console"]
