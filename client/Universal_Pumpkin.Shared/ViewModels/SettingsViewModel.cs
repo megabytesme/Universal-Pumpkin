@@ -157,6 +157,11 @@ namespace Universal_Pumpkin.ViewModels
             return $"{v.Major}.{v.Minor}.{v.Build}.{v.Revision}";
         }
 
+        public string GetArchitecture()
+        {
+            return Package.Current.Id.Architecture.ToString().ToLower();
+        }
+
         public string GetPumpkinVersion() => "0.1.0-dev+1.21.11";
         public string GetMinecraftVersion() => "1.21.11";
         public int GetProtocolVersion() => 774;
