@@ -23,7 +23,22 @@ namespace Universal_Pumpkin.Views.Win11
         {
             this.InitializeComponent();
             _vm = new SettingsViewModel();
+            this.SizeChanged += SettingsPage_Win11_SizeChanged;
             LoadAll();
+        }
+
+        private void SettingsPage_Win11_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            double width = e.NewSize.Width;
+
+            if (width <= 640)
+            {
+                TitleBlock.Margin = new Thickness(12, 12, 0, 8);
+            }
+            else
+            {
+                TitleBlock.Margin = new Thickness(0, 0, 0, 8);
+            }
         }
 
         private async void LoadAll()
