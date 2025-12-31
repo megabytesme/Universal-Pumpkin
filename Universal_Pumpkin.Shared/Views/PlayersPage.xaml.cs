@@ -18,13 +18,15 @@ namespace Universal_Pumpkin
     public sealed partial class PlayersPage : Page
     {
         private readonly PlayersViewModel _vm;
-        public ObservableCollection<PlayerData> PlayersList { get; } = new ObservableCollection<PlayerData>();
         private PlayerData _selectedPlayer;
+
+        public ObservableCollection<PlayerData> PlayersList => _vm.PlayersList;
 
         public PlayersPage()
         {
-            this.InitializeComponent();
             _vm = new PlayersViewModel();
+
+            this.InitializeComponent();
             this.DataContext = this;
 
             _vm.PlayersUpdated += (s, e) =>
@@ -279,7 +281,7 @@ namespace Universal_Pumpkin
                     {
                         foreach (var name in matchingPlayers) _vm.SendCommand($"ban {name} \"{reason}\"");
                     }
-                    
+
                     await Task.Delay(500);
                 }
                 else

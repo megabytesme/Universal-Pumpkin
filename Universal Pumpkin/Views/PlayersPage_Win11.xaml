@@ -53,11 +53,10 @@
 
         <DataTemplate x:Key="PlayerCardTemplate"
                       x:DataType="models:PlayerData">
-
             <Border Width="300"
-                    Height="130"
+                    Height="135"
                     CornerRadius="8"
-                    Margin="8"
+                    Margin="6"
                     Background="{ThemeResource LayerFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}"
                     BorderThickness="1"
@@ -74,14 +73,12 @@
                     <StackPanel Grid.Column="0"
                                 Spacing="6"
                                 VerticalAlignment="Top">
-
                         <Grid Width="48"
                               Height="48">
                             <PersonPicture ProfilePicture="{x:Bind HeadUrl}"
                                            Width="48"
                                            Height="48"
                                            Initials="{x:Bind Username}"/>
-
                             <Border Background="#AA000000"
                                     VerticalAlignment="Bottom"
                                     HorizontalAlignment="Stretch"
@@ -116,12 +113,10 @@
 
                     <StackPanel Grid.Column="1"
                                 Margin="12,0,0,0"
-                                Spacing="4">
-
+                                Spacing="2">
                         <TextBlock Text="{x:Bind Username}"
                                    Style="{ThemeResource SubtitleTextBlockStyle}"
                                    TextTrimming="CharacterEllipsis"/>
-
                         <TextBlock Text="{x:Bind Uuid}"
                                    Style="{ThemeResource CaptionTextBlockStyle}"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -152,9 +147,9 @@
                                               Foreground="#FF55FF55"/>
                                     <TextBlock Text="{x:Bind ExpLevel}"
                                                Foreground="#FF55FF55"
-                                               FontWeight="Bold"/>
+                                               FontWeight="Bold"
+                                               FontSize="12"/>
                                 </StackPanel>
-
                                 <ProgressBar Value="{x:Bind ExpProgress}"
                                              Maximum="1.0"
                                              Height="4"
@@ -166,20 +161,19 @@
                         <TextBlock FontSize="11"
                                    Margin="0,4,0,0"
                                    FontFamily="Consolas">
-                    <Run Text="X:"
-                            Foreground="Gray"/>
-                    <Run Text="{x:Bind Position.FmtX}"
-                            Foreground="White"/>
-                    <Run Text=" Y:"
-                            Foreground="Gray"/>
-                    <Run Text="{x:Bind Position.FmtY}"
-                            Foreground="White"/>
-                    <Run Text=" Z:"
-                            Foreground="Gray"/>
-                    <Run Text="{x:Bind Position.FmtZ}"
-                            Foreground="White"/>
+                        <Run Text="X:"
+                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <Run Text="{x:Bind Position.FmtX}"
+                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                        <Run Text=" Y:"
+                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <Run Text="{x:Bind Position.FmtY}"
+                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                        <Run Text=" Z:"
+                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <Run Text="{x:Bind Position.FmtZ}"
+                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                         </TextBlock>
-
                     </StackPanel>
                 </Grid>
             </Border>

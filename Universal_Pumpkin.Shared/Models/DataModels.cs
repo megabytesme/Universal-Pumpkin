@@ -10,7 +10,7 @@ namespace Universal_Pumpkin.Models
         [JsonProperty("z")] public double Z { get; set; }
 
         [JsonIgnore] public string FmtX => X.ToString("0.000");
-        [JsonIgnore] public string FmtY => Y.ToString("0.00000");
+        [JsonIgnore] public string FmtY => Y.ToString("0.000");
         [JsonIgnore] public string FmtZ => Z.ToString("0.000");
     }
 
