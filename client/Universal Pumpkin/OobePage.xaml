@@ -1,0 +1,179 @@
+﻿<Page
+    x:Class="Universal_Pumpkin.OobePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="{ThemeResource AppBackgroundAcrylic}">
+
+    <Page.Resources>
+        <Style x:Key="CardBorderStyle"
+               TargetType="Border">
+            <Setter Property="Background"
+                    Value="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"/>
+            <Setter Property="CornerRadius"
+                    Value="8"/>
+            <Setter Property="Margin"
+                    Value="24"/>
+            <Setter Property="Padding"
+                    Value="0"/>
+            <Setter Property="HorizontalAlignment"
+                    Value="Center"/>
+            <Setter Property="VerticalAlignment"
+                    Value="Center"/>
+            <Setter Property="MaxWidth"
+                    Value="600"/>
+        </Style>
+
+        <Style TargetType="TextBlock"
+               x:Key="BodyTextStyle">
+            <Setter Property="TextWrapping"
+                    Value="Wrap"/>
+            <Setter Property="Margin"
+                    Value="0,0,0,12"/>
+            <Setter Property="FontSize"
+                    Value="14"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid>
+        <FlipView x:Name="OobeFlipView">
+
+            <!-- 1. WELCOME -->
+            <FlipViewItem>
+                <Border Style="{StaticResource CardBorderStyle}">
+                    <StackPanel Padding="40">
+                        <TextBlock Text="Welcome to Universal Pumpkin"
+                                   FontSize="28"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,16"/>
+                        <TextBlock Text="Empowering everyone to host fast and efficient Minecraft servers on Universal Windows Platform (UWP) supporting devices."
+                                   FontSize="16"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,32"/>
+                        <Button Content="Get Started"
+                                Click="Next_Click"
+                                HorizontalAlignment="Center"
+                                Padding="32,12"
+                                FontSize="16"/>
+                    </StackPanel>
+                </Border>
+            </FlipViewItem>
+
+            <!-- 2. LIMITATIONS -->
+            <FlipViewItem>
+                <Border Style="{StaticResource CardBorderStyle}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Padding="40">
+                            <TextBlock Text="Important Limitations"
+                                       FontSize="24"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,24"/>
+
+                            <TextBlock Text="• Sandbox Filesystem"
+                                       FontWeight="Bold"
+                                       Margin="0,0,0,4"/>
+                            <TextBlock Text="This app runs inside the Windows sandbox. It can only access files inside its own folder unless you explicitly pick a file or folder."
+                                       Style="{StaticResource BodyTextStyle}"/>
+
+                            <TextBlock Text="• Background Execution"
+                                       FontWeight="Bold"
+                                       Margin="0,0,0,4"/>
+                            <TextBlock Text="To keep the server running when minimized, Windows requires special background permissions."
+                                       Style="{StaticResource BodyTextStyle}"/>
+
+                            <TextBlock Text="• Localhost Connections"
+                                       FontWeight="Bold"
+                                       Margin="0,0,0,4"/>
+                            <TextBlock Style="{StaticResource BodyTextStyle}">
+                                Windows blocks UWP apps from using 'localhost' to talk to other apps on the same device. 
+                                This means Minecraft on your PC cannot connect to 127.0.0.1 unless loopback is enabled.
+                            </TextBlock>
+
+                            <HyperlinkButton Content="View Microsoft Instructions for Loopback"
+                                             NavigateUri="https://learn.microsoft.com/en-us/previous-versions/windows/apps/hh780593(v=win.10)"
+                                             Margin="0,0,0,24"/>
+
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="12">
+                                <Button Content="Grant Permission"
+                                        Click="BtnPermission_Click"
+                                        Margin="0,0,12,0"/>
+                            </StackPanel>
+
+                            <TextBlock x:Name="TxtPermStatus"
+                                       Foreground="#FF55FF55"
+                                       Margin="0,12,0,0"
+                                       FontWeight="Bold"/>
+
+                            <Button Content="Next"
+                                    Click="Next_Click"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,24,0,0"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </FlipViewItem>
+
+            <!-- 3. DATA SETUP -->
+            <FlipViewItem>
+                <Border Style="{StaticResource CardBorderStyle}">
+                    <StackPanel Padding="40">
+                        <TextBlock Text="Data Setup"
+                                   FontSize="24"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,24"/>
+                        <TextBlock Text="Do you have an existing Pumpkin backup?"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                   Margin="0,0,0,24"
+                                   FontSize="16"/>
+
+                        <Button x:Name="BtnRestore"
+                                Content="Restore Backup"
+                                Click="BtnRestore_Click"
+                                HorizontalAlignment="Stretch"
+                                Margin="0,0,0,12"
+                                Padding="12"/>
+
+                        <ProgressRing x:Name="RestoreRing"
+                                      IsActive="False"
+                                      Visibility="Collapsed"
+                                      HorizontalAlignment="Center"
+                                      Margin="0,0,0,12"/>
+
+                        <TextBlock x:Name="TxtRestoreStatus"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,12"/>
+
+                        <Button x:Name="BtnStartFresh"
+                                Content="Start Fresh"
+                                Click="Next_Click"
+                                HorizontalAlignment="Stretch"
+                                Padding="12"/>
+                    </StackPanel>
+                </Border>
+            </FlipViewItem>
+
+            <!-- 4. FINISH -->
+            <FlipViewItem>
+                <Border Style="{StaticResource CardBorderStyle}">
+                    <StackPanel Padding="40"
+                                HorizontalAlignment="Center">
+                        <TextBlock Text="You're all set!"
+                                   FontSize="36"
+                                   FontWeight="Light"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,32"/>
+                        <Button Content="Launch Dashboard"
+                                Click="BtnFinish_Click"
+                                Width="240"
+                                Height="60"
+                                FontSize="18"/>
+                    </StackPanel>
+                </Border>
+            </FlipViewItem>
+        </FlipView>
+    </Grid>
+</Page>

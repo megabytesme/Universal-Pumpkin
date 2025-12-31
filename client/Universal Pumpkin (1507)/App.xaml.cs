@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Universal_Pumpkin.Services;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
@@ -67,12 +68,38 @@ namespace Universal_Pumpkin
             {
                 if (rootFrame.Content == null)
                 {
-                    // When the navigation stack isn't restored navigate to the first page,
-                    // configuring the new page by passing required information as a navigation
-                    // parameter
-                    rootFrame.Navigate(typeof(MainPage), e.Arguments);
+                    if (FirstRunService.IsFirstRun)
+                    {
+                        rootFrame.Navigate(NavigationHelper.GetPageType("OOBE"), e.Arguments);
+                    }
+                    else
+                    {
+                        // When the navigation stack isn't restored navigate to the first page,
+                        // configuring the new page by passing required information as a navigation
+                        // parameter
+                        Type shellType = NavigationHelper.GetPageType("Shell");
+                        rootFrame.Navigate(shellType, e.Arguments);
+                    }
                 }
-                // Ensure the current window is active
+                Window.Current.Activate();
+            }
+
+            if (e.PrelaunchActivated == false)
+            {
+                if (rootFrame.Content == null)
+                {
+                    if (FirstRunService.IsFirstRun)
+                    {
+                        rootFrame.Navigate(typeof(OobePage), e.Arguments);
+                    }
+                    else
+                    {
+                        // When the navigation stack isn't restored navigate to the first page,
+                        // configuring the new page by passing required information as a navigation
+                        // parameter
+                        rootFrame.Navigate(typeof(MainPage), e.Arguments);
+                    }
+                }
                 Window.Current.Activate();
             }
         }

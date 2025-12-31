@@ -85,13 +85,19 @@ namespace Universal_Pumpkin
             {
                 if (rootFrame.Content == null)
                 {
-                    // When the navigation stack isn't restored navigate to the first page,
-                    // configuring the new page by passing required information as a navigation
-                    // parameter
-                    Type shellType = NavigationHelper.GetPageType("Shell");
-                    rootFrame.Navigate(shellType, e.Arguments);
+                    if (FirstRunService.IsFirstRun)
+                    {
+                        rootFrame.Navigate(NavigationHelper.GetPageType("OOBE"), e.Arguments);
+                    }
+                    else
+                    {
+                        // When the navigation stack isn't restored navigate to the first page,
+                        // configuring the new page by passing required information as a navigation
+                        // parameter
+                        Type shellType = NavigationHelper.GetPageType("Shell");
+                        rootFrame.Navigate(shellType, e.Arguments);
+                    }
                 }
-                // Ensure the current window is active
                 Window.Current.Activate();
             }
         }

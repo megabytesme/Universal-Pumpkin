@@ -9,14 +9,18 @@
     <Import_RootNamespace>Universal_Pumpkin.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\NavigationHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\FirstRunService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\BackgroundKeeper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\MojangApiHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\ManagementHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\OSHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\ManagementModels.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ViewModels\OobeViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\PlayersViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\SettingsViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\ConsoleViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\OobePage.xaml.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\MainPage.xaml.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\ConsolePage.xaml.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\PlayersPage.xaml.cs" />
@@ -29,7 +33,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Core\PumpkinController.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)Helpers\" />
     <Folder Include="$(MSBuildThisFileDirectory)Models\" />
     <Folder Include="$(MSBuildThisFileDirectory)Views\" />
     <Folder Include="$(MSBuildThisFileDirectory)Core\" />
