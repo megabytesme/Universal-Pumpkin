@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 
@@ -10,6 +11,8 @@ namespace Universal_Pumpkin
     {
         private static readonly List<string> ConfigFiles = new List<string> { "configuration.toml", "features.toml" };
 
+        private static readonly SemaphoreSlim _fileLock = new SemaphoreSlim(1, 1);
+
         private static async Task<string> ReadFileAsync(string filename)
         {
             try
@@ -18,7 +21,10 @@ namespace Universal_Pumpkin
                 var file = await folder.GetFileAsync(filename);
                 return await FileIO.ReadTextAsync(file);
             }
-            catch { return null; }
+            catch
+            {
+                return null;
+            }
         }
 
         public static async Task<string> GetValueAsync(string section, string key)
@@ -76,45 +82,69 @@ namespace Universal_Pumpkin
 
         public static async Task SaveValueAsync(string section, string key, string newValue)
         {
-            if (newValue.ToLower() == "true" || newValue.ToLower() == "false")
-                newValue = newValue.ToLower();
-            else if (!int.TryParse(newValue, out _) && !double.TryParse(newValue, out _))
-                newValue = $"\"{newValue}\"";
-
-            string targetFile = "configuration.toml";
-            bool keyFound = false;
-
-            foreach (var file in ConfigFiles)
+            await _fileLock.WaitAsync();
+            try
             {
-                if (await GetValueFromFileAsync(file, section, key) != null)
+                if (key == "seed")
                 {
-                    targetFile = file;
-                    keyFound = true;
-                    break;
+                    newValue = $"\"{newValue}\"";
                 }
-            }
+                else if (newValue.ToLower() == "true" || newValue.ToLower() == "false")
+                {
+                    newValue = newValue.ToLower();
+                }
+                else if (!int.TryParse(newValue, out _) && !double.TryParse(newValue, out _))
+                {
+                    newValue = $"\"{newValue}\"";
+                }
 
-            if (!keyFound && !string.IsNullOrEmpty(section))
-            {
+                string targetFile = "configuration.toml";
+                bool keyFound = false;
+
                 foreach (var file in ConfigFiles)
                 {
-                    string content = await ReadFileAsync(file);
-                    if (content != null && Regex.IsMatch(content, $@"^\s*\[{Regex.Escape(section)}\]", RegexOptions.Multiline))
+                    if (await GetValueFromFileAsync(file, section, key) != null)
                     {
                         targetFile = file;
+                        keyFound = true;
                         break;
                     }
                 }
-            }
 
-            await WriteValueToFileAsync(targetFile, section, key, newValue);
+                if (!keyFound && !string.IsNullOrEmpty(section))
+                {
+                    foreach (var file in ConfigFiles)
+                    {
+                        string content = await ReadFileAsync(file);
+                        if (content != null && Regex.IsMatch(content, $@"^\s*\[{Regex.Escape(section)}\]", RegexOptions.Multiline))
+                        {
+                            targetFile = file;
+                            break;
+                        }
+                    }
+                }
+
+                await WriteValueToFileAsync(targetFile, section, key, newValue);
+            }
+            finally
+            {
+                _fileLock.Release();
+            }
         }
 
         private static async Task WriteValueToFileAsync(string filename, string section, string key, string val)
         {
             var folder = ApplicationData.Current.LocalFolder;
             StorageFile file;
-            try { file = await folder.GetFileAsync(filename); } catch { return; }
+
+            try
+            {
+                file = await folder.GetFileAsync(filename);
+            }
+            catch
+            {
+                return;
+            }
 
             string content = await FileIO.ReadTextAsync(file);
 
@@ -130,7 +160,12 @@ namespace Universal_Pumpkin
 
                 if (Regex.IsMatch(rootPart, pattern, RegexOptions.Multiline))
                 {
-                    string newRoot = Regex.Replace(rootPart, pattern, $"$1{val}", RegexOptions.Multiline);
+                    string newRoot = Regex.Replace(
+                        rootPart,
+                        pattern,
+                        m => m.Groups[1].Value + val,
+                        RegexOptions.Multiline);
+
                     await FileIO.WriteTextAsync(file, newRoot + restPart);
                 }
                 else
@@ -160,7 +195,12 @@ namespace Universal_Pumpkin
 
                     if (Regex.IsMatch(sectionBlock, keyPattern, RegexOptions.Multiline))
                     {
-                        string newBlock = Regex.Replace(sectionBlock, keyPattern, $"$1{val}", RegexOptions.Multiline);
+                        string newBlock = Regex.Replace(
+                            sectionBlock,
+                            keyPattern,
+                            m => m.Groups[1].Value + val,
+                            RegexOptions.Multiline);
+
                         await FileIO.WriteTextAsync(file, preSection + newBlock + postSection);
                     }
                     else
