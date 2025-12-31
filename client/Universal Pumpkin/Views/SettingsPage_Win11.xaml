@@ -13,7 +13,8 @@
                     MaxWidth="800"
                     HorizontalAlignment="Center">
 
-            <TextBlock Text="Server Configuration"
+            <TextBlock x:Name="TitleBlock"
+                       Text="Server Configuration"
                        Style="{ThemeResource TitleTextBlockStyle}"
                        Margin="0,0,0,8"/>
 
