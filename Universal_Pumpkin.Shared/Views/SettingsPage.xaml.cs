@@ -268,7 +268,7 @@ namespace Universal_Pumpkin
                     {
                         new Run() { Text = "Universal Pumpkin", FontWeight = Windows.UI.Text.FontWeights.Bold, FontSize = 18 },
                         new LineBreak(),
-                        new Run() { Text = $"Version {_vm.GetAppVersion()} ({_vm.GetAppName()})" },
+                        new Run() { Text = $"Version {_vm.GetAppVersion()} ({_vm.GetAppName()}) {_vm.GetArchitecture()}" },
                         new LineBreak(),
 
                         new Run() { Text = $"Pumpkin {_vm.GetPumpkinVersion()}" },
