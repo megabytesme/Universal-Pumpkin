@@ -110,7 +110,8 @@
                             <TextBlock x:Name="TxtPermStatus"
                                        Foreground="Green"
                                        Margin="0,12,0,0"
-                                       FontWeight="Bold"/>
+                                       FontWeight="Bold"
+                                       TextWrapping="WrapWholeWords"/>
 
                             <Button Content="Next"
                                     Click="Next_Click"
