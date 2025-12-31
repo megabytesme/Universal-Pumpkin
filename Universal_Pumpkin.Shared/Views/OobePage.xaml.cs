@@ -25,15 +25,35 @@ namespace Universal_Pumpkin
                 BtnStartFresh.IsEnabled = false;
                 BtnRestore.Content = "Restore Complete";
 
-                if (OobeFlipView.SelectedIndex < OobeFlipView.Items.Count - 1)
-                    OobeFlipView.SelectedIndex += 1;
+                Dispatcher.RunAsync(
+                    Windows.UI.Core.CoreDispatcherPriority.Normal,
+                    () =>
+                    {
+                        if (OobeFlipView.SelectedIndex < OobeFlipView.Items.Count - 1)
+                        {
+                            OobeFlipView.SelectedIndex += 1;
+                            System.Diagnostics.Debug.WriteLine($"[OOBE] RestoreCompleted: after={OobeFlipView.SelectedIndex}");
+                        }
+                    }
+                );
             };
         }
 
         private void Next_Click(object sender, RoutedEventArgs e)
         {
-            if (OobeFlipView.SelectedIndex < OobeFlipView.Items.Count - 1)
-                OobeFlipView.SelectedIndex += 1;
+            System.Diagnostics.Debug.WriteLine($"[OOBE] Next_Click fired (before={OobeFlipView.SelectedIndex})");
+
+            Dispatcher.RunAsync(
+                Windows.UI.Core.CoreDispatcherPriority.Normal,
+                () =>
+                {
+                    if (OobeFlipView.SelectedIndex < OobeFlipView.Items.Count - 1)
+                    {
+                        OobeFlipView.SelectedIndex += 1;
+                        System.Diagnostics.Debug.WriteLine($"[OOBE] Next_Click dispatcher: after={OobeFlipView.SelectedIndex}");
+                    }
+                }
+            );
         }
 
         private async void BtnPermission_Click(object sender, RoutedEventArgs e)
@@ -65,6 +85,7 @@ namespace Universal_Pumpkin
 
         private void BtnFinish_Click(object sender, RoutedEventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine("[OOBE] BtnFinish_Click fired");
             _vm.CompleteOobe();
             this.Frame.Navigate(NavigationHelper.GetPageType("Shell"));
             this.Frame.BackStack.Clear();
