@@ -143,7 +143,8 @@
                         <TextBlock Text="Data Setup"
                                    Style="{ThemeResource TitleTextBlockStyle}"/>
                         <TextBlock Text="Do you have an existing backup from Pumpkin?"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="WrapWholeWords"/>
 
                         <Grid ColumnSpacing="16"
                               HorizontalAlignment="Stretch">
@@ -201,7 +202,8 @@
                                   Foreground="{ThemeResource SystemFillColorSuccessBrush}"/>
                         <TextBlock Text="You're all set!"
                                    Style="{ThemeResource TitleTextBlockStyle}"
-                                   FontSize="32"/>
+                                   FontSize="32"
+                                   TextWrapping="WrapWholeWords"/>
                         <Button Content="Launch Dashboard"
                                 Click="BtnFinish_Click"
                                 Style="{StaticResource AccentButtonStyle}"

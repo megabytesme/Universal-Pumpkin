@@ -129,7 +129,8 @@
                         <TextBlock Text="Do you have an existing Pumpkin backup?"
                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                                    Margin="0,0,0,24"
-                                   FontSize="16"/>
+                                   FontSize="16"
+                                   TextWrapping="WrapWholeWords"/>
 
                         <Button x:Name="BtnRestore"
                                 Content="Restore Backup"
@@ -166,7 +167,8 @@
                                    FontSize="36"
                                    FontWeight="Light"
                                    HorizontalAlignment="Center"
-                                   Margin="0,0,0,32"/>
+                                   Margin="0,0,0,32"
+                                   TextWrapping="WrapWholeWords"/>
                         <Button Content="Launch Dashboard"
                                 Click="BtnFinish_Click"
                                 Width="240"
