@@ -15,7 +15,7 @@
     </Page.Resources>
     
     <ScrollViewer Padding="20">
-        <StackPanel Padding="15" MaxWidth="800" HorizontalAlignment="Left">
+        <StackPanel Padding="15" MaxWidth="800" HorizontalAlignment="Center">
             <TextBlock Text="Server Configuration" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,10"/>
             <TextBlock Text="Note: You must restart the app for changes to take effect." Foreground="OrangeRed" FontWeight="Bold" TextWrapping="WrapWholeWords"/>
 

@@ -60,11 +60,13 @@
                         <TextBlock Text="Welcome to Universal Pumpkin"
                                    Style="{ThemeResource TitleTextBlockStyle}"
                                    FontSize="32"
-                                   HorizontalAlignment="Center"/>
+                                   HorizontalAlignment="Center"
+                                   TextWrapping="WrapWholeWords"/>
                         <TextBlock Text="A modern, high-performance Minecraft server wrapper."
                                    Style="{ThemeResource SubtitleTextBlockStyle}"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   HorizontalAlignment="Center"/>
+                                   HorizontalAlignment="Center"
+                                   TextWrapping="WrapWholeWords"/>
                         <Button Content="Get Started"
                                 Click="Next_Click"
                                 HorizontalAlignment="Center"

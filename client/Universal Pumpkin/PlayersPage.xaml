@@ -130,7 +130,8 @@
                               Padding="12"
                               SelectionMode="None"
                               IsItemClickEnabled="False"
-                              ItemsSource="{x:Bind PlayersList}">
+                              ItemsSource="{x:Bind PlayersList}"
+                              HorizontalAlignment="Center">
                         <GridView.ItemTemplate>
                             <DataTemplate x:DataType="models:PlayerData">
                                 <Border Width="300"
