@@ -49,7 +49,8 @@
                                    FontSize="28"
                                    FontWeight="Bold"
                                    HorizontalAlignment="Center"
-                                   Margin="0,0,0,16"/>
+                                   Margin="0,0,0,16"
+                                   TextWrapping="WrapWholeWords"/>
                         <TextBlock Text="Empowering everyone to host fast and efficient Minecraft servers on Universal Windows Platform (UWP) supporting devices."
                                    FontSize="16"
                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"

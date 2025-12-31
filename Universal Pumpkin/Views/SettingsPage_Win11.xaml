@@ -11,7 +11,7 @@
     <ScrollViewer Padding="20">
         <StackPanel Spacing="16"
                     MaxWidth="800"
-                    HorizontalAlignment="Left">
+                    HorizontalAlignment="Center">
 
             <TextBlock Text="Server Configuration"
                        Style="{ThemeResource TitleTextBlockStyle}"

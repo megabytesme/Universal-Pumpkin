@@ -34,7 +34,7 @@
     <ScrollViewer Padding="20">
         <StackPanel Padding="15"
                     MaxWidth="800"
-                    HorizontalAlignment="Left">
+                    HorizontalAlignment="Center">
 
             <TextBlock Text="Server Configuration"
                        Style="{StaticResource TitleTextBlockStyle}"
@@ -42,7 +42,8 @@
 
             <TextBlock Text="Note: You must restart the app for changes to take effect."
                        Foreground="OrangeRed"
-                       FontWeight="Bold"/>
+                       FontWeight="Bold"
+                       TextWrapping="WrapWholeWords"/>
 
             <StackPanel x:Name="AppearanceCard"
                         Style="{StaticResource FluentCard}">
