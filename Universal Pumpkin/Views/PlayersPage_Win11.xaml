@@ -16,6 +16,7 @@
         <local:InverseBoolConverter x:Key="InverseBoolConverter"/>
         <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
 
+        <!-- Context Menu -->
         <MenuFlyout x:Key="PlayerContextMenu">
             <MenuFlyoutItem Text="Operator (OP)"
                             Click="Menu_Op_Click"
@@ -51,6 +52,7 @@
                             Icon="Globe"/>
         </MenuFlyout>
 
+        <!-- Player Card -->
         <DataTemplate x:Key="PlayerCardTemplate"
                       x:DataType="models:PlayerData">
             <Border Width="300"
@@ -63,7 +65,6 @@
                     RightTapped="Player_RightTapped"
                     Holding="Player_Holding"
                     FlyoutBase.AttachedFlyout="{StaticResource PlayerContextMenu}">
-
                 <Grid Padding="12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -89,7 +90,6 @@
                                            Foreground="White"/>
                             </Border>
                         </Grid>
-
                         <Border Background="#FFFF5555"
                                 CornerRadius="4"
                                 Padding="4,0"
@@ -100,7 +100,6 @@
                                        FontWeight="Bold"
                                        Foreground="White"/>
                         </Border>
-
                         <Border Background="#FF555555"
                                 CornerRadius="4"
                                 Padding="4,0"
@@ -127,7 +126,6 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-
                             <StackPanel Orientation="Horizontal"
                                         Grid.Column="0"
                                         Spacing="4">
@@ -137,7 +135,6 @@
                                 <TextBlock Text="{x:Bind Health}"
                                            Style="{ThemeResource CaptionTextBlockStyle}"/>
                             </StackPanel>
-
                             <StackPanel Grid.Column="1"
                                         Spacing="2">
                                 <StackPanel Orientation="Horizontal"
@@ -161,24 +158,25 @@
                         <TextBlock FontSize="11"
                                    Margin="0,4,0,0"
                                    FontFamily="Consolas">
-                        <Run Text="X:"
-                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                        <Run Text="{x:Bind Position.FmtX}"
-                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                        <Run Text=" Y:"
-                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                        <Run Text="{x:Bind Position.FmtY}"
-                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
-                        <Run Text=" Z:"
-                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                        <Run Text="{x:Bind Position.FmtZ}"
-                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                            <Run Text="X:"
+                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <Run Text="{x:Bind Position.FmtX}"
+                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                            <Run Text=" Y:"
+                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <Run Text="{x:Bind Position.FmtY}"
+                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                            <Run Text=" Z:"
+                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <Run Text="{x:Bind Position.FmtZ}"
+                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
                         </TextBlock>
                     </StackPanel>
                 </Grid>
             </Border>
         </DataTemplate>
 
+        <!-- Picker Template -->
         <DataTemplate x:Key="PlayerPickerTemplate"
                       x:DataType="models:PlayerData">
             <Grid Padding="8,6">
@@ -203,192 +201,209 @@
         </DataTemplate>
     </Page.Resources>
 
-    <Grid>
-        <Pivot x:Name="MainPivot"
-               SelectionChanged="MainPivot_SelectionChanged">
-            <PivotItem Header="Online">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
+    <!-- NAVIGATION BAR LAYOUT -->
+    <muxc:NavigationView x:Name="TopNav"
+                         PaneDisplayMode="Top"
+                         IsBackButtonVisible="Collapsed"
+                         IsSettingsVisible="False"
+                         SelectionChanged="TopNav_SelectionChanged">
 
-                    <CommandBar Background="Transparent"
-                                DefaultLabelPosition="Right">
-                        <AppBarButton Icon="Refresh"
-                                      Label="Refresh"
-                                      Click="BtnRefresh_Click"/>
-                    </CommandBar>
+        <muxc:NavigationView.FooterMenuItems>
+            <muxc:NavigationViewItem Content="Online"
+                                     Tag="Online"
+                                     Icon="People"/>
+            <muxc:NavigationViewItem Content="Operators"
+                                     Tag="Ops"
+                                     Icon="Contact"/>
+            <muxc:NavigationViewItem Content="Bans"
+                                     Tag="Bans"
+                                     Icon="BlockContact"/>
+            <muxc:NavigationViewItem Content="IP Bans"
+                                     Tag="IpBans"
+                                     Icon="World"/>
+        </muxc:NavigationView.FooterMenuItems>
 
-                    <GridView x:Name="PlayerGrid"
-                              Grid.Row="1"
-                              Padding="12"
-                              SelectionMode="None"
-                              IsItemClickEnabled="False"
-                              ItemsSource="{x:Bind _vm.PlayersList}"
-                              ItemTemplate="{StaticResource PlayerCardTemplate}"/>
+        <Grid Margin="0,12,0,0">
+            <!-- 1. ONLINE VIEW -->
+            <Grid x:Name="ViewOnline">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <CommandBar Background="Transparent"
+                            DefaultLabelPosition="Right">
+                    <AppBarButton Icon="Refresh"
+                                  Label="Refresh"
+                                  Click="BtnRefresh_Click"/>
+                </CommandBar>
 
-                    <StackPanel x:Name="NoPlayersPanel"
-                                Grid.Row="1"
-                                VerticalAlignment="Center"
-                                HorizontalAlignment="Center"
-                                Spacing="12"
-                                Visibility="Collapsed">
-                        <FontIcon Glyph="&#xE716;"
-                                  FontSize="48"
-                                  Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
-                        <TextBlock x:Name="NoPlayersText"
-                                   Text="No players online"
-                                   Style="{ThemeResource SubtitleTextBlockStyle}"
-                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
-                    </StackPanel>
-                </Grid>
-            </PivotItem>
+                <GridView x:Name="PlayerGrid"
+                          Grid.Row="1"
+                          Padding="12"
+                          SelectionMode="None"
+                          IsItemClickEnabled="False"
+                          ItemsSource="{x:Bind _vm.PlayersList}"
+                          ItemTemplate="{StaticResource PlayerCardTemplate}"
+                          HorizontalAlignment="Center"/>
 
-            <PivotItem Header="Operators">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <CommandBar Background="Transparent"
-                                DefaultLabelPosition="Right">
-                        <AppBarButton Icon="Add"
-                                      Label="Add Op"
-                                      Click="BtnAddOp_Click"/>
-                        <AppBarButton Icon="Refresh"
-                                      Label="Refresh"
-                                      Click="BtnRefreshManagement_Click"/>
-                    </CommandBar>
+                <StackPanel x:Name="NoPlayersText"
+                            Grid.Row="1"
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Spacing="12"
+                            Visibility="Collapsed">
+                    <FontIcon Glyph="&#xE716;"
+                              FontSize="48"
+                              Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                    <TextBlock Text="No players online"
+                               Style="{ThemeResource SubtitleTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
+                </StackPanel>
+            </Grid>
 
-                    <ListView x:Name="ListOps"
-                              Grid.Row="1"
-                              SelectionMode="None"
-                              ItemsSource="{x:Bind _vm.OpsList}">
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="models:OpEntry">
-                                <Grid Padding="12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <PersonPicture ProfilePicture="{x:Bind HeadUrl}"
-                                                   Width="32"
-                                                   Height="32"
-                                                   Margin="0,0,12,0"/>
-                                    <StackPanel Grid.Column="1"
-                                                VerticalAlignment="Center">
-                                        <TextBlock Text="{x:Bind Name}"
-                                                   FontWeight="Bold"/>
-                                        <TextBlock Text="{x:Bind Uuid}"
-                                                   FontSize="12"
-                                                   Foreground="Gray"/>
-                                    </StackPanel>
-                                    <Button Grid.Column="2"
-                                            Content="Remove"
-                                            Click="BtnRemoveOp_Click"
-                                            Tag="{x:Bind}"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                </Grid>
-            </PivotItem>
+            <!-- 2. OPS VIEW -->
+            <Grid x:Name="ViewOps"
+                  Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <CommandBar Background="Transparent"
+                            DefaultLabelPosition="Right">
+                    <AppBarButton Icon="Add"
+                                  Label="Add Op"
+                                  Click="BtnAddOp_Click"/>
+                    <AppBarButton Icon="Refresh"
+                                  Label="Refresh"
+                                  Click="BtnRefreshManagement_Click"/>
+                </CommandBar>
+                <ListView x:Name="ListOps"
+                          Grid.Row="1"
+                          SelectionMode="None"
+                          ItemsSource="{x:Bind _vm.OpsList}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="models:OpEntry">
+                            <Grid Padding="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <PersonPicture ProfilePicture="{x:Bind HeadUrl}"
+                                               Width="32"
+                                               Height="32"
+                                               Margin="0,0,12,0"/>
+                                <StackPanel Grid.Column="1"
+                                            VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Name}"
+                                               FontWeight="Bold"/>
+                                    <TextBlock Text="{x:Bind Uuid}"
+                                               FontSize="12"
+                                               Foreground="Gray"/>
+                                </StackPanel>
+                                <Button Grid.Column="2"
+                                        Content="Remove"
+                                        Click="BtnRemoveOp_Click"
+                                        Tag="{x:Bind}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
 
-            <PivotItem Header="Bans">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <CommandBar Background="Transparent"
-                                DefaultLabelPosition="Right">
-                        <AppBarButton Icon="Add"
-                                      Label="Ban Player"
-                                      Click="BtnAddBan_Click"/>
-                        <AppBarButton Icon="Refresh"
-                                      Label="Refresh"
-                                      Click="BtnRefreshManagement_Click"/>
-                    </CommandBar>
-                    <ListView x:Name="ListBans"
-                              Grid.Row="1"
-                              SelectionMode="None"
-                              ItemsSource="{x:Bind _vm.BansList}">
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="models:BanEntry">
-                                <Grid Padding="12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <PersonPicture ProfilePicture="{x:Bind HeadUrl}"
-                                                   Width="32"
-                                                   Height="32"
-                                                   Margin="0,0,12,0"/>
-                                    <StackPanel Grid.Column="1"
-                                                VerticalAlignment="Center">
-                                        <TextBlock Text="{x:Bind Name}"
-                                                   FontWeight="Bold"/>
-                                        <TextBlock Text="{x:Bind Reason}"
-                                                   Foreground="Red"
-                                                   FontSize="12"/>
-                                    </StackPanel>
-                                    <Button Grid.Column="2"
-                                            Content="Pardon"
-                                            Click="BtnRemoveBan_Click"
-                                            Tag="{x:Bind}"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                </Grid>
-            </PivotItem>
+            <!-- 3. BANS VIEW -->
+            <Grid x:Name="ViewBans"
+                  Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <CommandBar Background="Transparent"
+                            DefaultLabelPosition="Right">
+                    <AppBarButton Icon="Add"
+                                  Label="Ban Player"
+                                  Click="BtnAddBan_Click"/>
+                    <AppBarButton Icon="Refresh"
+                                  Label="Refresh"
+                                  Click="BtnRefreshManagement_Click"/>
+                </CommandBar>
+                <ListView x:Name="ListBans"
+                          Grid.Row="1"
+                          SelectionMode="None"
+                          ItemsSource="{x:Bind _vm.BansList}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="models:BanEntry">
+                            <Grid Padding="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <PersonPicture ProfilePicture="{x:Bind HeadUrl}"
+                                               Width="32"
+                                               Height="32"
+                                               Margin="0,0,12,0"/>
+                                <StackPanel Grid.Column="1"
+                                            VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind Name}"
+                                               FontWeight="Bold"/>
+                                    <TextBlock Text="{x:Bind Reason}"
+                                               Foreground="Red"
+                                               FontSize="12"/>
+                                </StackPanel>
+                                <Button Grid.Column="2"
+                                        Content="Pardon"
+                                        Click="BtnRemoveBan_Click"
+                                        Tag="{x:Bind}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
 
-            <PivotItem Header="IP Bans">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    <CommandBar Background="Transparent"
-                                DefaultLabelPosition="Right">
-                        <AppBarButton Icon="Add"
-                                      Label="Ban IP"
-                                      Click="BtnAddIpBan_Click"/>
-                        <AppBarButton Icon="Refresh"
-                                      Label="Refresh"
-                                      Click="BtnRefreshManagement_Click"/>
-                    </CommandBar>
-                    <ListView x:Name="ListIpBans"
-                              Grid.Row="1"
-                              SelectionMode="None"
-                              ItemsSource="{x:Bind _vm.IpBansList}">
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="models:IpBanEntry">
-                                <Grid Padding="12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <TextBlock Text="{x:Bind Ip}"
-                                                   FontWeight="Bold"/>
-                                        <TextBlock Text="{x:Bind Reason}"
-                                                   Foreground="Red"
-                                                   FontSize="12"/>
-                                    </StackPanel>
-                                    <Button Grid.Column="1"
-                                            Content="Pardon"
-                                            Click="BtnRemoveIpBan_Click"
-                                            Tag="{x:Bind}"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                </Grid>
-            </PivotItem>
-        </Pivot>
-    </Grid>
+            <!-- 4. IP BANS VIEW -->
+            <Grid x:Name="ViewIpBans"
+                  Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <CommandBar Background="Transparent"
+                            DefaultLabelPosition="Right">
+                    <AppBarButton Icon="Add"
+                                  Label="Ban IP"
+                                  Click="BtnAddIpBan_Click"/>
+                    <AppBarButton Icon="Refresh"
+                                  Label="Refresh"
+                                  Click="BtnRefreshManagement_Click"/>
+                </CommandBar>
+                <ListView x:Name="ListIpBans"
+                          Grid.Row="1"
+                          SelectionMode="None"
+                          ItemsSource="{x:Bind _vm.IpBansList}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="models:IpBanEntry">
+                            <Grid Padding="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{x:Bind Ip}"
+                                               FontWeight="Bold"/>
+                                    <TextBlock Text="{x:Bind Reason}"
+                                               Foreground="Red"
+                                               FontSize="12"/>
+                                </StackPanel>
+                                <Button Grid.Column="1"
+                                        Content="Pardon"
+                                        Click="BtnRemoveIpBan_Click"
+                                        Tag="{x:Bind}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </Grid>
+    </muxc:NavigationView>
 </Page>

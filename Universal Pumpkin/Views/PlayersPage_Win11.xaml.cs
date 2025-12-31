@@ -11,6 +11,10 @@ using Universal_Pumpkin.Models;
 using Universal_Pumpkin.ViewModels;
 using System.Net;
 using System.Diagnostics;
+using Microsoft.UI.Xaml.Controls;
+using NavigationView = Microsoft.UI.Xaml.Controls.NavigationView;
+using NavigationViewSelectionChangedEventArgs = Microsoft.UI.Xaml.Controls.NavigationViewSelectionChangedEventArgs;
+using NavigationViewItem = Microsoft.UI.Xaml.Controls.NavigationViewItem;
 
 namespace Universal_Pumpkin.Views.Win11
 {
@@ -37,7 +41,8 @@ namespace Universal_Pumpkin.Views.Win11
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            HandlePivotState();
+            TopNav.SelectedItem = TopNav.FooterMenuItems[0];
+            HandleNavigation("Online");
         }
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -46,29 +51,55 @@ namespace Universal_Pumpkin.Views.Win11
             _vm.StopPolling();
         }
 
-        private void MainPivot_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void TopNav_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
         {
-            HandlePivotState();
-        }
-
-        private void HandlePivotState()
-        {
-            if (MainPivot.SelectedIndex == 0)
+            if (args.SelectedItem is NavigationViewItem item)
             {
-                _vm.StartPolling();
-            }
-            else
-            {
-                _vm.StopPolling();
-                RefreshManagementData();
+                HandleNavigation(item.Tag.ToString());
             }
         }
 
-        private async void RefreshManagementData()
+        private void HandleNavigation(string tag)
+        {
+            ViewOnline.Visibility = Visibility.Collapsed;
+            ViewOps.Visibility = Visibility.Collapsed;
+            ViewBans.Visibility = Visibility.Collapsed;
+            ViewIpBans.Visibility = Visibility.Collapsed;
+
+            switch (tag)
+            {
+                case "Online":
+                    ViewOnline.Visibility = Visibility.Visible;
+                    _vm.StartPolling();
+                    break;
+
+                case "Ops":
+                    ViewOps.Visibility = Visibility.Visible;
+                    _vm.StopPolling();
+                    RefreshManagementData(1);
+                    break;
+
+                case "Bans":
+                    ViewBans.Visibility = Visibility.Visible;
+                    _vm.StopPolling();
+                    RefreshManagementData(2);
+                    break;
+
+                case "IpBans":
+                    ViewIpBans.Visibility = Visibility.Visible;
+                    _vm.StopPolling();
+                    RefreshManagementData(3);
+                    break;
+            }
+        }
+
+        private async void RefreshManagementData(int mode = 0)
         {
             try
             {
-                switch (MainPivot.SelectedIndex)
+                if (mode == 0) return;
+
+                switch (mode)
                 {
                     case 1:
                         await _vm.LoadOps();
@@ -93,7 +124,12 @@ namespace Universal_Pumpkin.Views.Win11
         }
 
         private void BtnRefresh_Click(object sender, RoutedEventArgs e) => _vm.StartPolling();
-        private void BtnRefreshManagement_Click(object sender, RoutedEventArgs e) => RefreshManagementData();
+        private void BtnRefreshManagement_Click(object sender, RoutedEventArgs e)
+        {
+            if (ViewOps.Visibility == Visibility.Visible) RefreshManagementData(1);
+            else if (ViewBans.Visibility == Visibility.Visible) RefreshManagementData(2);
+            else if (ViewIpBans.Visibility == Visibility.Visible) RefreshManagementData(3);
+        }
 
         private async void BtnAddOp_Click(object sender, RoutedEventArgs e)
         {
