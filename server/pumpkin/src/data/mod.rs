@@ -1,5 +1,8 @@
-use std::{env, fs, path::{Path, PathBuf}};
 use std::sync::OnceLock;
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -20,7 +23,8 @@ pub fn set_data_root(path: PathBuf) {
 }
 
 fn get_base_dir() -> PathBuf {
-    OVERRIDE_DATA_ROOT.get()
+    OVERRIDE_DATA_ROOT
+        .get()
         .cloned()
         .unwrap_or_else(|| env::current_dir().unwrap())
 }
@@ -32,7 +36,7 @@ pub trait LoadJSONConfiguration {
         Self: Sized + Default + Serialize + for<'de> Deserialize<'de>,
     {
         let exe_dir = get_base_dir();
-        
+
         let data_dir = exe_dir.join(DATA_FOLDER);
         if !data_dir.exists() {
             log::debug!("creating new data root folder");
@@ -78,7 +82,7 @@ pub trait SaveJSONConfiguration: LoadJSONConfiguration {
         Self: Sized + Default + Serialize + for<'de> Deserialize<'de>,
     {
         let exe_dir = get_base_dir();
-        
+
         let data_dir = exe_dir.join(DATA_FOLDER);
         if !data_dir.exists() {
             log::debug!("creating new data root folder");

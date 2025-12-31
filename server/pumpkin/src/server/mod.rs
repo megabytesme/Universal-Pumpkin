@@ -35,10 +35,10 @@ use rsa::RsaPublicKey;
 use std::collections::HashSet;
 use std::fs;
 use std::net::IpAddr;
+use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU32};
 use std::{future::Future, sync::atomic::Ordering, time::Duration};
-use std::path::Path;
 use tokio::sync::{Mutex, RwLock};
 use tokio::task::JoinHandle;
 use tokio_util::task::TaskTracker;
@@ -136,25 +136,23 @@ impl Server {
             match error {
                 // If it doesn't exist, just make a new one
                 WorldInfoError::InfoNotFound => (),
-                WorldInfoError::UnsupportedDataVersion(v)
-                | WorldInfoError::UnsupportedLevelVersion(v) => {
-                    log::error!("Unsupported version: {:?}", v);
+                WorldInfoError::UnsupportedDataVersion(_version)
+                | WorldInfoError::UnsupportedLevelVersion(_version) => {
+                    log::error!("Failed to load world info!");
+                    log::error!("{error}");
                     panic!("Unsupported world version! See the logs for more info.");
                 }
                 e => {
-                    panic!("World Error {:?}", e);
+                    panic!("World Error {e}");
                 }
             }
         } else {
             let dat_path = world_path.join(LEVEL_DAT_FILE_NAME);
             if dat_path.exists() {
                 let backup_path = world_path.join(LEVEL_DAT_BACKUP_FILE_NAME);
-                if let Err(e) = fs::copy(&dat_path, &backup_path) {
-                     log::warn!("Failed to backup level.dat: {}", e);
-                }
+                fs::copy(dat_path, backup_path).unwrap();
             }
         }
-
         let locker = match AnvilLevelLocker::lock(&world_path) {
             Ok(l) => Some(l),
             Err(err) => {
@@ -177,8 +175,6 @@ impl Server {
         let defaultgamemode = Mutex::new(DefaultGamemode {
             gamemode: basic_config.default_gamemode,
         });
-        
-        // Ensure player data uses the rebased path
         let player_data_storage = ServerPlayerData::new(
             world_path.join("playerdata"),
             Duration::from_secs(advanced_config.player_data.save_player_cron_interval),

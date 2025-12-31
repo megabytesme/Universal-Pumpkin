@@ -1,17 +1,18 @@
-use pumpkin::server::Server;
+use log::{Metadata, Record};
 use pumpkin::PumpkinServer;
+use pumpkin::command::CommandSender;
 use pumpkin::entity::player::Player;
 use pumpkin::net::ClientPlatform;
-use pumpkin::command::CommandSender;
+use pumpkin::server::Server;
+use pumpkin_config::LoadConfiguration;
 use pumpkin_protocol::java::client::play::CommandSuggestion;
 use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
-use std::sync::{Arc, OnceLock};
-use std::sync::atomic::Ordering;
-use tokio::runtime::Runtime;
-use log::{Record, Metadata, LevelFilter};
 use std::sync::atomic::AtomicPtr;
+use std::sync::atomic::Ordering;
+use std::sync::{Arc, OnceLock};
+use tokio::runtime::Runtime;
 
 //  GLOBAL STATE
 static SERVER_INSTANCE: OnceLock<Arc<Server>> = OnceLock::new();
@@ -53,7 +54,7 @@ impl SerializedPlayer {
     pub fn from_player(player: &Player) -> Self {
         let entity = &player.living_entity.entity;
         let pos = entity.pos.load();
-        
+
         let (ip, platform) = match &player.client {
             ClientPlatform::Java(c) => {
                 let addr_str = if let Ok(guard) = c.address.try_lock() {
@@ -62,7 +63,7 @@ impl SerializedPlayer {
                     "Locked".to_string()
                 };
                 (addr_str, "Java".to_string())
-            },
+            }
             ClientPlatform::Bedrock(c) => (c.address.to_string(), "Bedrock".to_string()),
         };
 
@@ -78,9 +79,13 @@ impl SerializedPlayer {
             exp_level: player.experience_level.load(Ordering::Relaxed),
             exp_progress: player.experience_progress.load(),
             total_exp: player.experience_points.load(Ordering::Relaxed),
-            permission_level: player.permission_lvl.load() as i32, 
+            permission_level: player.permission_lvl.load() as i32,
             is_on_ground: entity.on_ground.load(Ordering::Relaxed),
-            position: Vector3 { x: pos.x, y: pos.y, z: pos.z },
+            position: Vector3 {
+                x: pos.x,
+                y: pos.y,
+                z: pos.z,
+            },
             rotation_yaw: entity.yaw.load(),
             rotation_pitch: entity.pitch.load(),
             dimension: format!("{:?}", entity.world.dimension_type),
@@ -131,19 +136,16 @@ impl log::Log for UwpLogger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            let msg = format!("[{}] [{}] {}", record.level(), record.target(), record.args());
+            let msg = format!(
+                "[{}] [{}] {}",
+                record.level(),
+                record.target(),
+                record.args()
+            );
             Self::send_to_csharp(&msg);
         }
     }
     fn flush(&self) {}
-}
-
-static UWP_LOGGER: OnceLock<UwpLogger> = OnceLock::new();
-
-fn uwp_init_logger() {
-    let logger = UWP_LOGGER.get_or_init(|| UwpLogger);
-    let _ = log::set_logger(logger);
-    log::set_max_level(LevelFilter::Info);
 }
 
 fn uwp_init_panic_hook() {
@@ -155,20 +157,29 @@ fn uwp_init_panic_hook() {
                 None => "Box<Any>",
             },
         };
-        let location = info.location().map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column())).unwrap_or_else(|| "unknown".to_string());
-        let err_msg = format!("\n[PANIC] Thread '{:?}' panicked at '{}': {}\n", std::thread::current().name(), location, msg);
+        let location = info
+            .location()
+            .map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column()))
+            .unwrap_or_else(|| "unknown".to_string());
+        let err_msg = format!(
+            "\n[PANIC] Thread '{:?}' panicked at '{}': {}\n",
+            std::thread::current().name(),
+            location,
+            msg
+        );
         log::error!("{}", err_msg);
         UwpLogger::send_to_csharp(&err_msg);
     }));
 }
 
+static LOG_CALLBACK_RAW: std::sync::atomic::AtomicPtr<()> =
+    std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
+
 //  FFI EXPORTS
 #[unsafe(no_mangle)]
 pub extern "C" fn pumpkin_register_logger(cb: LogCallback) {
-    LOG_CALLBACK.store(cb as *mut (), Ordering::Relaxed);
-    uwp_init_logger();
+    LOG_CALLBACK_RAW.store(cb as *mut (), Ordering::Relaxed);
     uwp_init_panic_hook();
-    log::info!("Callback logger connected successfully.");
 }
 
 #[unsafe(no_mangle)]
@@ -196,7 +207,10 @@ pub extern "C" fn pumpkin_get_metrics_json() -> *mut c_char {
         let (avg_ns, tick_count) = if let Ok(times) = server.tick_times_nanos.try_lock() {
             let sum: i64 = times.iter().sum();
             let count = times.len().max(1) as f64;
-            (sum as f64 / count, server.tick_count.load(Ordering::Relaxed))
+            (
+                sum as f64 / count,
+                server.tick_count.load(Ordering::Relaxed),
+            )
         } else {
             (50_000_000.0, 0)
         };
@@ -206,7 +220,7 @@ pub extern "C" fn pumpkin_get_metrics_json() -> *mut c_char {
 
         let mut loaded_chunks = 0;
         let mut player_count = 0;
-        
+
         if let Ok(worlds) = server.worlds.try_read() {
             for world in worlds.iter() {
                 loaded_chunks += world.level.loaded_chunk_count();
@@ -232,11 +246,13 @@ pub extern "C" fn pumpkin_get_metrics_json() -> *mut c_char {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn pumpkin_get_completions_json(input_utf8: *const c_char) -> *mut c_char {
-    if input_utf8.is_null() { return CString::new("[]").unwrap().into_raw(); }
-    
+    if input_utf8.is_null() {
+        return CString::new("[]").unwrap().into_raw();
+    }
+
     if let Some(server) = SERVER_INSTANCE.get() {
         let server_ref = server.clone();
-        
+
         let c_str = unsafe { CStr::from_ptr(input_utf8) };
         let full_input = match c_str.to_str() {
             Ok(s) => s.to_string(),
@@ -246,24 +262,24 @@ pub extern "C" fn pumpkin_get_completions_json(input_utf8: *const c_char) -> *mu
         if let Some(rt) = RUNTIME.get() {
             let suggestions = rt.block_on(async move {
                 let dispatcher = server_ref.command_dispatcher.read().await;
-                
+
                 if !full_input.contains(' ') {
                     let mut matches = Vec::new();
                     for key in dispatcher.commands.keys() {
                         if key.starts_with(&full_input) {
                             matches.push(CommandSuggestion {
                                 suggestion: key.clone(),
-                                tooltip: None 
+                                tooltip: None,
                             });
                         }
                     }
                     return matches;
                 }
 
-                let src = CommandSender::Console; 
-                
+                let src = CommandSender::Console;
+
                 let query = if full_input.ends_with(' ') {
-                    full_input.clone() 
+                    full_input.clone()
                 } else {
                     full_input.clone()
                 };
@@ -271,12 +287,13 @@ pub extern "C" fn pumpkin_get_completions_json(input_utf8: *const c_char) -> *mu
                 dispatcher.find_suggestions(&src, &server_ref, &query).await
             });
 
-            let results: Vec<SerializedSuggestion> = suggestions.into_iter().map(|s| {
-                SerializedSuggestion {
+            let results: Vec<SerializedSuggestion> = suggestions
+                .into_iter()
+                .map(|s| SerializedSuggestion {
                     text: s.suggestion,
-                    tooltip: s.tooltip.map(|t| t.get_text()), 
-                }
-            }).collect();
+                    tooltip: s.tooltip.map(|t| t.get_text()),
+                })
+                .collect();
 
             let json = serde_json::to_string(&results).unwrap_or("[]".to_string());
             return CString::new(json).unwrap().into_raw();
@@ -287,23 +304,27 @@ pub extern "C" fn pumpkin_get_completions_json(input_utf8: *const c_char) -> *mu
 
 #[unsafe(no_mangle)]
 pub extern "C" fn pumpkin_inject_command(cmd_utf8: *const c_char) {
-    if cmd_utf8.is_null() { return; }
-    
+    if cmd_utf8.is_null() {
+        return;
+    }
+
     if let Some(server) = SERVER_INSTANCE.get() {
         let server_ref = server.clone();
-        
+
         let c_str = unsafe { CStr::from_ptr(cmd_utf8) };
         if let Ok(cmd_str) = c_str.to_str() {
             let command = cmd_str.to_string();
-            
+
             if let Some(rt) = RUNTIME.get() {
                 rt.spawn(async move {
                     let dispatcher = server_ref.command_dispatcher.read().await;
-                    dispatcher.handle_command(
-                        &pumpkin::command::CommandSender::Console, 
-                        &server_ref, 
-                        &command
-                    ).await;
+                    dispatcher
+                        .handle_command(
+                            &pumpkin::command::CommandSender::Console,
+                            &server_ref,
+                            &command,
+                        )
+                        .await;
                 });
             }
         }
@@ -312,10 +333,10 @@ pub extern "C" fn pumpkin_inject_command(cmd_utf8: *const c_char) {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn pumpkin_run_from_config_dir(config_dir_utf8: *const c_char) -> i32 {
-    use std::panic;
-    let result = panic::catch_unwind(|| unsafe {
-        if config_dir_utf8.is_null() { return -1; }
-
+    let result = std::panic::catch_unwind(|| unsafe {
+        if config_dir_utf8.is_null() {
+            return -1;
+        }
         let c_str = CStr::from_ptr(config_dir_utf8);
         let config_dir_str = match c_str.to_str() {
             Ok(s) => s,
@@ -323,26 +344,40 @@ pub extern "C" fn pumpkin_run_from_config_dir(config_dir_utf8: *const c_char) ->
         };
 
         let config_dir = std::path::PathBuf::from(config_dir_str);
-
         pumpkin::data::set_data_root(config_dir.clone());
 
-        let rt = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
+        let basic_config = pumpkin_config::BasicConfiguration::load(&config_dir);
+        let advanced_config = pumpkin_config::AdvancedConfiguration::load(&config_dir);
+
+        let cb_ptr = LOG_CALLBACK_RAW.load(Ordering::Relaxed);
+        let callback = if !cb_ptr.is_null() {
+            Some(std::mem::transmute::<
+                *mut (),
+                pumpkin::logging::LogCallbackFn,
+            >(cb_ptr))
+        } else {
+            None
+        };
+
+        pumpkin::init_logger(&advanced_config, &config_dir, callback);
+
+        let rt = match tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+        {
             Ok(rt) => rt,
             Err(e) => {
                 log::error!("Failed to create runtime: {}", e);
                 return -6;
             }
         };
-        
+
         let _ = RUNTIME.set(rt);
 
         RUNTIME.get().unwrap().block_on(async {
-            use pumpkin_config::{BasicConfiguration, AdvancedConfiguration, LoadConfiguration};
+            let pumpkin_server =
+                PumpkinServer::new(basic_config, advanced_config, &config_dir).await;
 
-            let basic_config = BasicConfiguration::load(&config_dir);
-            let advanced_config = AdvancedConfiguration::load(&config_dir);
-            let pumpkin_server = PumpkinServer::new(basic_config, advanced_config, &config_dir).await;
-            
             let _ = SERVER_INSTANCE.set(pumpkin_server.server.clone());
 
             pumpkin_server.init_plugins().await;

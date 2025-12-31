@@ -3,7 +3,6 @@
 
 use flate2::write::GzEncoder;
 use log::{LevelFilter, Log, Record};
-#[cfg(feature = "tty")]
 use rustyline_async::Readline;
 use simplelog::{CombinedLogger, Config, SharedLogger, WriteLogger};
 use std::fmt::format;
@@ -19,7 +18,6 @@ const MAX_ATTEMPTS: u32 = 100;
 /// properly flush logs to the output while they happen instead of batched
 pub struct ReadlineLogWrapper {
     internal: Box<CombinedLogger>,
-    #[cfg(feature = "tty")]
     readline: std::sync::Mutex<Option<Readline>>,
 }
 
@@ -41,11 +39,13 @@ impl GzipRollingLogger {
         log_level: LevelFilter,
         config: Config,
         filename: String,
+        base_path: &std::path::Path,
     ) -> Result<Box<Self>, Box<dyn std::error::Error>> {
         let now = time::OffsetDateTime::now_utc();
-        std::fs::create_dir_all(LOG_DIR)?;
+        let log_dir = base_path.join("logs");
+        std::fs::create_dir_all(&log_dir)?;
 
-        let latest_path = PathBuf::from(LOG_DIR).join(&filename);
+        let latest_path = log_dir.join(&filename);
 
         // If latest.log exists, we will gzip it
         if latest_path.exists() {
@@ -211,17 +211,15 @@ impl ReadlineLogWrapper {
     pub fn new(
         log: Box<dyn SharedLogger + 'static>,
         file_logger: Option<Box<dyn SharedLogger + 'static>>,
-        #[cfg(feature = "tty")] rl: Option<Readline>,
+        rl: Option<Readline>,
     ) -> Self {
         let loggers: Vec<Option<Box<dyn SharedLogger + 'static>>> = vec![Some(log), file_logger];
         Self {
             internal: CombinedLogger::new(loggers.into_iter().flatten().collect()),
-            #[cfg(feature = "tty")]
             readline: std::sync::Mutex::new(rl),
         }
     }
 
-    #[cfg(feature = "tty")]
     pub fn take_readline(&self) -> Option<Readline> {
         self.readline
             .lock()
@@ -230,12 +228,18 @@ impl ReadlineLogWrapper {
 
     // This isn't really dead code, just for some reason rust thinks that it might be.
     // Schroedinger's dead code -> expect warns unfulfilled lint expectation but removing it causes dead_code lint?
-    #[cfg(feature = "tty")]
     #[allow(dead_code)]
     pub(crate) fn return_readline(&self, rl: Readline) {
         if let Ok(mut result) = self.readline.lock() {
             println!("Returned rl");
             let _ = result.insert(rl);
+        }
+    }
+
+    pub fn new_ffi_compatible(rl: Option<rustyline_async::Readline>) -> Self {
+        Self {
+            internal: CombinedLogger::new(vec![]),
+            readline: std::sync::Mutex::new(rl),
         }
     }
 }
@@ -244,7 +248,6 @@ impl ReadlineLogWrapper {
 impl Log for ReadlineLogWrapper {
     fn log(&self, record: &log::Record) {
         self.internal.log(record);
-        #[cfg(feature = "tty")]
         if let Ok(mut lock) = self.readline.lock()
             && let Some(rl) = lock.as_mut()
         {
@@ -254,7 +257,6 @@ impl Log for ReadlineLogWrapper {
 
     fn flush(&self) {
         self.internal.flush();
-        #[cfg(feature = "tty")]
         if let Ok(mut lock) = self.readline.lock()
             && let Some(rl) = lock.as_mut()
         {
@@ -264,5 +266,58 @@ impl Log for ReadlineLogWrapper {
 
     fn enabled(&self, metadata: &log::Metadata) -> bool {
         self.internal.enabled(metadata)
+    }
+}
+
+pub type LogCallbackFn = unsafe extern "C" fn(*const std::os::raw::c_char);
+
+pub struct CallbackLogger {
+    level: LevelFilter,
+    config: Config,
+    callback: LogCallbackFn,
+}
+
+impl CallbackLogger {
+    pub fn new(level: LevelFilter, config: Config, callback: LogCallbackFn) -> Box<Self> {
+        Box::new(Self {
+            level,
+            config,
+            callback,
+        })
+    }
+}
+
+impl Log for CallbackLogger {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        metadata.level() <= self.level
+    }
+
+    fn log(&self, record: &Record) {
+        if self.enabled(record.metadata()) {
+            let msg = format!(
+                "[{}] [{}] {}",
+                record.level(),
+                record.target(),
+                record.args()
+            );
+            if let Ok(c_str) = std::ffi::CString::new(msg) {
+                unsafe {
+                    (self.callback)(c_str.as_ptr());
+                }
+            }
+        }
+    }
+    fn flush(&self) {}
+}
+
+impl SharedLogger for CallbackLogger {
+    fn level(&self) -> LevelFilter {
+        self.level
+    }
+    fn config(&self) -> Option<&Config> {
+        Some(&self.config)
+    }
+    fn as_log(self: Box<Self>) -> Box<dyn Log> {
+        Box::new(*self)
     }
 }

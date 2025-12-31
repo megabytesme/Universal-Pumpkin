@@ -1,7 +1,7 @@
 // Not warn event sending macros
 #![allow(unused_labels)]
 
-use crate::logging::{GzipRollingLogger, ReadlineLogWrapper};
+use crate::logging::ReadlineLogWrapper;
 use crate::net::DisconnectReason;
 use crate::net::bedrock::BedrockClient;
 use crate::net::java::JavaClient;
@@ -16,7 +16,6 @@ use pumpkin_macros::send_cancellable;
 use pumpkin_protocol::ConnectionState::Play;
 use pumpkin_util::permission::{PermissionManager, PermissionRegistry};
 use pumpkin_util::text::TextComponent;
-#[cfg(feature = "tty")]
 use rustyline_async::{Readline, ReadlineEvent};
 use std::collections::HashMap;
 use std::io::{Cursor, IsTerminal, stdin};
@@ -59,98 +58,102 @@ pub type LoggerOption = Option<(ReadlineLogWrapper, LevelFilter)>;
 pub static LOGGER_IMPL: LazyLock<Arc<OnceLock<LoggerOption>>> =
     LazyLock::new(|| Arc::new(OnceLock::new()));
 
-pub fn init_logger(advanced_config: &AdvancedConfiguration) {
-    use simplelog::{ConfigBuilder, SharedLogger, SimpleLogger, WriteLogger};
+pub fn init_logger(
+    advanced_config: &AdvancedConfiguration,
+    probe_root: &std::path::Path,
+    external_callback: Option<crate::logging::LogCallbackFn>,
+) {
+    use crate::logging::{CallbackLogger, GzipRollingLogger, ReadlineLogWrapper};
+    use simplelog::{CombinedLogger, ConfigBuilder, SharedLogger, SimpleLogger};
 
-    let logger = if advanced_config.logging.enabled {
-        let mut config = ConfigBuilder::new();
+    if !advanced_config.logging.enabled {
+        let _ = LOGGER_IMPL.set(None);
+        return;
+    }
 
-        if advanced_config.logging.timestamp {
-            config.set_time_format_custom(time::macros::format_description!(
-                "[year]-[month]-[day] [hour]:[minute]:[second]"
-            ));
-            config.set_time_level(LevelFilter::Error);
-            let _ = config.set_time_offset_to_local();
-        } else {
-            config.set_time_level(LevelFilter::Off);
+    let mut config = ConfigBuilder::new();
+
+    if advanced_config.logging.timestamp {
+        config.set_time_format_custom(time::macros::format_description!(
+            "[year]-[month]-[day] [hour]:[minute]:[second]"
+        ));
+        config.set_time_level(LevelFilter::Error);
+        let _ = config.set_time_offset_to_local();
+    } else {
+        config.set_time_level(LevelFilter::Off);
+    }
+
+    if !advanced_config.logging.color {
+        for level in Level::iter() {
+            config.set_level_color(level, None);
         }
+    } else {
+        // We are technically logging to a file-like object.
+        config.set_write_log_enable_colors(true);
+    }
 
-        if !advanced_config.logging.color {
-            for level in Level::iter() {
-                config.set_level_color(level, None);
-            }
-        } else {
-            // We are technically logging to a file-like object.
-            config.set_write_log_enable_colors(true);
+    if !advanced_config.logging.threads {
+        config.set_thread_level(LevelFilter::Off);
+    } else {
+        config.set_thread_level(LevelFilter::Info);
+    }
+
+    let log_config = config.build();
+
+    let level = std::env::var("RUST_LOG")
+        .ok()
+        .as_deref()
+        .map(log::LevelFilter::from_str)
+        .and_then(Result::ok)
+        .unwrap_or(log::LevelFilter::Info);
+
+    let mut shared_loggers: Vec<Box<dyn SharedLogger>> = Vec::new();
+
+    if !advanced_config.logging.file.is_empty() {
+        match GzipRollingLogger::new(
+            level,
+            log_config.clone(),
+            advanced_config.logging.file.clone(),
+            probe_root,
+        ) {
+            Ok(logger) => shared_loggers.push(logger),
+            Err(e) => eprintln!("Failed to initialize file logger: {e}"),
         }
+    }
 
-        if !advanced_config.logging.threads {
-            config.set_thread_level(LevelFilter::Off);
-        } else {
-            config.set_thread_level(LevelFilter::Info);
-        }
+    if let Some(cb) = external_callback {
+        shared_loggers.push(CallbackLogger::new(level, log_config.clone(), cb));
+    }
 
-        let level = std::env::var("RUST_LOG")
-            .ok()
-            .as_deref()
-            .map(LevelFilter::from_str)
-            .and_then(Result::ok)
-            .unwrap_or(LevelFilter::Info);
-
-        let file_logger: Option<Box<dyn SharedLogger + 'static>> =
-            if advanced_config.logging.file.is_empty() {
-                None
-            } else {
-                Some(
-                    GzipRollingLogger::new(
-                        level,
-                        {
-                            let mut config = config.clone();
-                            for level in Level::iter() {
-                                config.set_level_color(level, None);
-                            }
-                            config.build()
-                        },
-                        advanced_config.logging.file.clone(),
-                    )
-                    .expect("Failed to initialize file logger.")
-                        as Box<dyn SharedLogger>,
-                )
-            };
-
-        #[cfg(feature = "tty")]
-        let (logger, rl): (Box<dyn SharedLogger + 'static>, Option<Readline>) = if advanced_config.commands.use_tty
-            && stdin().is_terminal()
-        {
-            match Readline::new("$ ".to_owned()) {
-                Ok((rl, stdout)) => (WriteLogger::new(level, config.build(), stdout), Some(rl)),
+    let (console_logger, rl): (Box<dyn SharedLogger>, _) =
+        if advanced_config.commands.use_tty && std::io::stdin().is_terminal() {
+            match rustyline_async::Readline::new("$ ".to_owned()) {
+                Ok((rl, stdout)) => (
+                    simplelog::WriteLogger::new(level, log_config, stdout),
+                    Some(rl),
+                ),
                 Err(e) => {
-                    log::warn!(
+                    eprintln!(
                         "Failed to initialize console input ({e}); falling back to simple logger"
                     );
-                    (SimpleLogger::new(level, config.build()), None)
+                    (SimpleLogger::new(level, log_config), None)
                 }
             }
         } else {
-            (SimpleLogger::new(level, config.build()), None)
+            (SimpleLogger::new(level, log_config), None)
         };
 
-        #[cfg(not(feature = "tty"))]
-        let logger: Box<dyn SharedLogger + 'static> = SimpleLogger::new(level, config.build());
+    shared_loggers.push(console_logger);
 
-        #[cfg(feature = "tty")]
-        let wrapper = ReadlineLogWrapper::new(logger, file_logger, rl);
+    let combined_boxed = CombinedLogger::new(shared_loggers);
 
-        #[cfg(not(feature = "tty"))]
-        let wrapper = ReadlineLogWrapper::new(logger, file_logger);
+    let _ = log::set_boxed_logger(combined_boxed);
+    log::set_max_level(level);
 
-        Some((wrapper, level))
-    } else {
-        None
-    };
+    let wrapper = ReadlineLogWrapper::new_ffi_compatible(rl);
 
-    if LOGGER_IMPL.set(logger).is_err() {
-        panic!("Failed to set logger. already initialized");
+    if LOGGER_IMPL.set(Some((wrapper, level))).is_err() {
+        log::warn!("Logger was already initialized!");
     }
 }
 
@@ -191,21 +194,19 @@ impl PumpkinServer {
 
         let mut ticker = Ticker::new();
 
-        if server.advanced_config.commands.use_console {
-             if let Some(logger_opt) = LOGGER_IMPL.get() {
-                if let Some((wrapper, _)) = logger_opt {
-                    #[cfg(feature = "tty")]
-                    if let Some(rl) = wrapper.take_readline() {
-                        setup_console(rl, server.clone());
-                    } else {
-                        log::warn!("Falling back to simple logger");
-                        setup_stdin_console(server.clone()).await;
-                    }
-
-                    #[cfg(not(feature = "tty"))]
-                    setup_stdin_console(server.clone()).await;
+        if server.advanced_config.commands.use_console
+            && let Some((wrapper, _)) = LOGGER_IMPL.wait()
+        {
+            if let Some(rl) = wrapper.take_readline() {
+                setup_console(rl, server.clone());
+            } else {
+                if server.advanced_config.commands.use_tty {
+                    log::warn!(
+                        "The input is not a TTY; falling back to simple logger and ignoring `use_tty` setting"
+                    );
                 }
-             }
+                setup_stdin_console(server.clone()).await;
+            }
         }
 
         if rcon.enabled {
@@ -222,13 +223,9 @@ impl PumpkinServer {
 
         if server.basic_config.java_edition {
             // Setup the TCP server socket.
-            let listener = match tokio::net::TcpListener::bind(server.basic_config.java_edition_address).await {
-                Ok(l) => l,
-                Err(e) => {
-                    panic!("UWP FATAL: Failed to bind TCP listener. Error: {}", e);
-                }
-            };
-
+            let listener = tokio::net::TcpListener::bind(server.basic_config.java_edition_address)
+                .await
+                .expect("Failed to start `TcpListener`");
             // In the event the user puts 0 for their port, this will allow us to know what port it is running on
             let addr = listener
                 .local_addr()
@@ -256,12 +253,9 @@ impl PumpkinServer {
         }
 
         if server.basic_config.allow_chat_reports {
-            let mojang_public_keys = match fetch_mojang_public_keys(&server.advanced_config.networking.authentication) {
-                Ok(k) => k,
-                Err(e) => {
-                    panic!("UWP FATAL: Failed to fetch Mojang keys. Error: {:?}", e);
-                }
-            };
+            let mojang_public_keys =
+                fetch_mojang_public_keys(&server.advanced_config.networking.authentication)
+                    .unwrap();
             *server.mojang_public_keys.lock().await = mojang_public_keys;
         }
 
@@ -276,13 +270,11 @@ impl PumpkinServer {
         let mut udp_socket = None;
 
         if server.basic_config.bedrock_edition {
-            let socket = match UdpSocket::bind(server.basic_config.bedrock_edition_address).await {
-                Ok(s) => s,
-                Err(e) => {
-                    panic!("UWP FATAL: Failed to bind UDP socket. Error: {}", e);
-                }
-            };
-            udp_socket = Some(Arc::new(socket));
+            udp_socket = Some(Arc::new(
+                UdpSocket::bind(server.basic_config.bedrock_edition_address)
+                    .await
+                    .expect("Failed to bind UDP Socket"),
+            ));
         }
 
         Self {
@@ -353,13 +345,11 @@ impl PumpkinServer {
 
         log::info!("Completed save!");
 
-        if let Some(logger_opt) = LOGGER_IMPL.get() {
-             if let Some((wrapper, _)) = logger_opt {
-                 #[cfg(feature = "tty")]
-                 if let Some(rl) = wrapper.take_readline() {
-                     let _ = rl;
-                 }
-             }
+        // Explicitly drop the line reader to return the terminal to the original state.
+        if let Some((wrapper, _)) = LOGGER_IMPL.wait()
+            && let Some(rl) = wrapper.take_readline()
+        {
+            let _ = rl;
         }
     }
 
@@ -524,7 +514,6 @@ async fn setup_stdin_console(server: Arc<Server>) {
     });
 }
 
-#[cfg(feature = "tty")]
 fn setup_console(rl: Readline, server: Arc<Server>) {
     // This needs to be async, or it will hog a thread.
     server.clone().spawn_task(async move {

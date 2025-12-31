@@ -13,7 +13,7 @@ use pumpkin_nbt::compound::NbtCompound;
 use pumpkin_nbt::nbt_long_array;
 use pumpkin_util::math::position::BlockPos;
 use serde::{Deserialize, Serialize};
-use std::ops::{BitAnd};
+use std::ops::{BitAnd, BitOr};
 use std::{collections::HashMap, sync::Arc};
 use thiserror::Error;
 
@@ -199,21 +199,23 @@ impl ChunkHeightmaps {
         // but this avoids the hassle of bit concatenation.
         let packed_array_bit_start_idx = bit_start_idx as u32 % 63;
 
-        let mask: i64 = if packed_array_bit_start_idx == 0 {
-            !( (0x1FFu64) << (64 - 9) ) as i64
-        } else {
-            !( (0x1FFu64) << (64 - packed_array_bit_start_idx - 9) ) as i64
+        let mask = {
+            if packed_array_bit_start_idx == 0 {
+                //0b0000_0000_0111_1111_...
+                !(0x1FF << (64 - 9))
+            } else {
+                !(0x1FF << (64 - packed_array_bit_start_idx - 9))
+            }
         };
 
-        let shifted: u64 = (adjust_height as u64)
-            .wrapping_shl(64 - 9 - packed_array_bit_start_idx);
-
-        let height: i64 = shifted as i64;
+        let height_bit_bytes = adjust_height
+            .wrapping_shl(64 - 9 - packed_array_bit_start_idx)
+            .to_ne_bytes();
+        let height = i64::from_ne_bytes(height_bit_bytes);
 
         let packed_array_idx = column_idx / 7;
 
-        data[packed_array_idx] =
-            (data[packed_array_idx] & mask) | height;
+        data[packed_array_idx] = data[packed_array_idx].bitand(mask).bitor(height);
     }
 
     pub fn get_height(&self, _type: ChunkHeightmapType, x: i32, z: i32, min_y: i32) -> i32 {
