@@ -1,0 +1,222 @@
+﻿<Page
+    x:Class="Universal_Pumpkin.Views.Win11.OobePage_Win11"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    muxc:BackdropMaterial.ApplyToRootOrPageBackground="True">
+
+    <Page.Resources>
+        <Style x:Key="MicaCardStyle"
+               TargetType="Border">
+            <Setter Property="Background"
+                    Value="{ThemeResource LayerFillColorDefaultBrush}"/>
+            <Setter Property="BorderBrush"
+                    Value="{ThemeResource SurfaceStrokeColorDefaultBrush}"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="CornerRadius"
+                    Value="8"/>
+            <Setter Property="Padding"
+                    Value="0"/>
+            <Setter Property="Margin"
+                    Value="24"/>
+            <Setter Property="VerticalAlignment"
+                    Value="Center"/>
+            <Setter Property="HorizontalAlignment"
+                    Value="Center"/>
+            <Setter Property="MaxWidth"
+                    Value="650"/>
+            <Setter Property="Transitions">
+                <Setter.Value>
+                    <TransitionCollection>
+                        <RepositionThemeTransition/>
+                    </TransitionCollection>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <FlipView x:Name="OobeFlipView"
+                  SelectionChanged="OobeFlipView_SelectionChanged">
+
+            <!-- 1. WELCOME -->
+            <FlipViewItem>
+                <Border Style="{StaticResource MicaCardStyle}">
+                    <StackPanel Spacing="24"
+                                Padding="40">
+                        <Image Source="ms-appx:///Assets/StoreLogo.png"
+                               Width="120"
+                               Height="120"
+                               HorizontalAlignment="Center"/>
+                        <TextBlock Text="Welcome to Universal Pumpkin"
+                                   Style="{ThemeResource TitleTextBlockStyle}"
+                                   FontSize="32"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="A modern, high-performance Minecraft server wrapper."
+                                   Style="{ThemeResource SubtitleTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   HorizontalAlignment="Center"/>
+                        <Button Content="Get Started"
+                                Click="Next_Click"
+                                HorizontalAlignment="Center"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Padding="32,12"
+                                Margin="0,24,0,0"/>
+                    </StackPanel>
+                </Border>
+            </FlipViewItem>
+
+            <!-- 2. LIMITATIONS -->
+            <FlipViewItem>
+                <Border Style="{StaticResource MicaCardStyle}">
+                    <ScrollViewer>
+                        <StackPanel Spacing="16"
+                                    Padding="32">
+                            <TextBlock Text="Important Limitations"
+                                       Style="{ThemeResource TitleTextBlockStyle}"
+                                       Margin="0,0,0,8"/>
+
+                            <muxc:InfoBar Title="UWP Sandbox"
+                                          Message="This app runs in a secure sandbox. It cannot access files outside its own folder without permission."
+                                          Severity="Informational"
+                                          IsOpen="True"
+                                          IsClosable="False"/>
+
+                            <muxc:InfoBar Title="Background Execution"
+                                          Message="To keep the server running when minimized, we need special permission."
+                                          Severity="Warning"
+                                          IsOpen="True"
+                                          IsClosable="False">
+                                <muxc:InfoBar.ActionButton>
+                                    <Button Content="Grant Permission"
+                                            Click="BtnPermission_Click"/>
+                                </muxc:InfoBar.ActionButton>
+                            </muxc:InfoBar>
+
+                            <muxc:Expander Header="Localhost Connections"
+                                           IsExpanded="False"
+                                           HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="8">
+                                    <TextBlock TextWrapping="Wrap"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                        Windows blocks UWP apps from using 'localhost' (127.0.0.1) to talk to other apps on the same device unless Loopback is enabled.
+                                    </TextBlock>
+                                    <HyperlinkButton Content="Learn how to enable Loopback"
+                                                     NavigateUri="https://learn.microsoft.com/en-us/previous-versions/windows/apps/hh780593(v=win.10)"/>
+                                </StackPanel>
+                            </muxc:Expander>
+
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="12"
+                                        Margin="0,12,0,0">
+                                <TextBlock x:Name="TxtPermStatus"
+                                           VerticalAlignment="Center"
+                                           Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                           FontWeight="Bold"/>
+                            </StackPanel>
+
+                            <Button Content="Next"
+                                    Click="Next_Click"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,12,0,0"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </FlipViewItem>
+
+            <!-- 3. DATA SETUP -->
+            <FlipViewItem>
+                <Border Style="{StaticResource MicaCardStyle}">
+                    <StackPanel Spacing="24"
+                                Padding="40">
+                        <TextBlock Text="Data Setup"
+                                   Style="{ThemeResource TitleTextBlockStyle}"/>
+                        <TextBlock Text="Do you have an existing backup from Pumpkin?"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+
+                        <Grid ColumnSpacing="16"
+                              HorizontalAlignment="Stretch">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Button x:Name="BtnRestore"
+                                    HorizontalAlignment="Stretch"
+                                    Height="120"
+                                    Click="BtnRestore_Click"
+                                    CornerRadius="8">
+                                <StackPanel Spacing="8">
+                                    <FontIcon Glyph="&#xE8B7;"
+                                              FontSize="32"/>
+                                    <TextBlock Text="Restore Backup"
+                                               FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="BtnStartFresh"
+                                    HorizontalAlignment="Stretch"
+                                    Height="120"
+                                    Grid.Column="1"
+                                    Click="Next_Click"
+                                    CornerRadius="8">
+                                <StackPanel Spacing="8">
+                                    <FontIcon Glyph="&#xE710;"
+                                              FontSize="32"/>
+                                    <TextBlock Text="Start Fresh"
+                                               FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <muxc:ProgressBar x:Name="RestoreProgress"
+                                          IsIndeterminate="True"
+                                          Visibility="Collapsed"/>
+                        <TextBlock x:Name="TxtRestoreStatus"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+                </Border>
+            </FlipViewItem>
+
+            <!-- 4. FINISH -->
+            <FlipViewItem>
+                <Border Style="{StaticResource MicaCardStyle}">
+                    <StackPanel Spacing="32"
+                                Padding="40"
+                                HorizontalAlignment="Center">
+                        <FontIcon Glyph="&#xE73E;"
+                                  FontSize="72"
+                                  Foreground="{ThemeResource SystemFillColorSuccessBrush}"/>
+                        <TextBlock Text="You're all set!"
+                                   Style="{ThemeResource TitleTextBlockStyle}"
+                                   FontSize="32"/>
+                        <Button Content="Launch Dashboard"
+                                Click="BtnFinish_Click"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Width="240"
+                                Height="60"
+                                FontSize="18"
+                                CornerRadius="8"/>
+                    </StackPanel>
+                </Border>
+            </FlipViewItem>
+        </FlipView>
+
+        <muxc:PipsPager x:Name="Pager"
+                        Grid.Row="1"
+                        NumberOfPages="4"
+                        Margin="0,0,0,24"
+                        SelectedPageIndex="{x:Bind OobeFlipView.SelectedIndex, Mode=OneWay}"
+                        Visibility="Visible"/>
+    </Grid>
+</Page>

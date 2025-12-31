@@ -1,16 +1,23 @@
 ﻿using System;
+using Universal_Pumpkin.Services;
+#if UWP1709
 using Universal_Pumpkin.Views.Win11;
+#endif
 
-namespace Universal_Pumpkin.Services
+namespace Universal_Pumpkin
 {
     public static class NavigationHelper
     {
+#if UWP1709
         public static Type GetPageType(string pageKey)
         {
             bool useModern = OSHelper.IsWin11Mode;
 
             switch (pageKey)
             {
+                case "OOBE":
+                    return useModern ? typeof(OobePage_Win11) : typeof(OobePage);
+
                 case "Shell":
                     return useModern ? typeof(ShellPage) : typeof(MainPage);
 
@@ -27,5 +34,30 @@ namespace Universal_Pumpkin.Services
                     throw new ArgumentException($"Unknown page key: {pageKey}");
             }
         }
+#else
+        public static Type GetPageType(string pageKey)
+        {
+            switch (pageKey)
+            {
+                case "OOBE":
+                    return typeof(OobePage);
+
+                case "Shell":
+                    return typeof(MainPage);
+
+                case "Console":
+                    return typeof(ConsolePage);
+
+                case "Players":
+                    return typeof(PlayersPage);
+
+                case "Settings":
+                    return typeof(SettingsPage);
+
+                default:
+                    throw new ArgumentException($"Unknown page key: {pageKey}");
+            }
+        }
+#endif
     }
 }
