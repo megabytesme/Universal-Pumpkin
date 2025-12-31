@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\NavigationHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\UpdateService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\FirstRunService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\BackgroundKeeper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\MojangApiHelper.cs" />

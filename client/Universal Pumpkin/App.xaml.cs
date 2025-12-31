@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Universal_Pumpkin.Services;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
@@ -99,6 +101,76 @@ namespace Universal_Pumpkin
                     }
                 }
                 Window.Current.Activate();
+
+                _ = CheckForUpdatesAtStartup();
+            }
+        }
+
+        private async Task CheckForUpdatesAtStartup()
+        {
+            var updateInfo = await UpdateService.CheckForUpdatesAsync();
+
+            if (updateInfo.IsUpdateAvailable)
+            {
+                await Window.Current.Dispatcher.RunAsync(
+                Windows.UI.Core.CoreDispatcherPriority.Normal,
+                async () =>
+                {
+                    var scrollViewer = new ScrollViewer
+                    {
+                        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                        MaxHeight = 350
+                    };
+
+                    var panel = new StackPanel();
+
+                    var headerText = new TextBlock
+                    {
+                        Text = $"Version {updateInfo.LatestVersion} is available to download!",
+                        FontWeight = Windows.UI.Text.FontWeights.Bold,
+                        Margin = new Thickness(0, 0, 0, 12)
+                    };
+
+                    var bodyText = new TextBlock
+                    {
+                        Text = updateInfo.Body,
+                        TextWrapping = TextWrapping.Wrap
+                    };
+
+                    panel.Children.Add(headerText);
+                    panel.Children.Add(bodyText);
+                    scrollViewer.Content = panel;
+
+                    var dialog = new ContentDialog
+                    {
+                        Title = "Update Available",
+                        Content = scrollViewer,
+                        PrimaryButtonText = "Download",
+                        CloseButtonText = "Skip",
+                        DefaultButton = ContentDialogButton.Primary
+                    };
+
+                    if (Window.Current.Content is FrameworkElement fe && fe.XamlRoot != null)
+                    {
+                        dialog.XamlRoot = fe.XamlRoot;
+                    }
+
+                    try
+                    {
+                        var result = await dialog.ShowAsync();
+                        if (result == ContentDialogResult.Primary)
+                        {
+                            if (!string.IsNullOrEmpty(updateInfo.ReleaseUrl))
+                            {
+                                await Windows.System.Launcher.LaunchUriAsync(new Uri(updateInfo.ReleaseUrl));
+                            }
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        Debug.WriteLine("[CheckForUpdatesAtStartup] Dialog failed to show");
+                    }
+                });
             }
         }
 
