@@ -1,4 +1,5 @@
-﻿using Windows.UI.Xaml;
+﻿using Universal_Pumpkin.Shared.Views;
+using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 #if UWP1709
 using Universal_Pumpkin.Services;
@@ -44,7 +45,7 @@ namespace Universal_Pumpkin
                 switch (tag)
                 {
                     case "Console":
-                        ContentFrame.Navigate(typeof(ConsolePage));
+                        ContentFrame.Navigate(typeof(ConsolePage_Win10));
                         break;
                     case "Players":
                         ContentFrame.Navigate(typeof(PlayersPage));
