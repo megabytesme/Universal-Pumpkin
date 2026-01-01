@@ -273,27 +273,50 @@
                           Height="40"/>
         </Grid>
 
-        <Grid Grid.Row="4"
+        <Grid Row="4"
+              x:Name="CommandInputContainer"
+              HorizontalAlignment="Stretch"
               Margin="0,12,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <AutoSuggestBox x:Name="BoxCommand"
-                            PlaceholderText="Enter command..."
-                            IsEnabled="False"
-                            TextChanged="BoxCommand_TextChanged"
-                            QuerySubmitted="BoxCommand_QuerySubmitted"
-                            SuggestionChosen="BoxCommand_SuggestionChosen"
-                            UpdateTextOnSelect="False"/>
+            <Grid Grid.Column="0"
+                  VerticalAlignment="Center">
+
+                <AutoSuggestBox x:Name="BoxCommand"
+                                PlaceholderText="Enter server command..."
+                                UpdateTextOnSelect="False"
+                                TextChanged="BoxCommand_TextChanged"
+                                QuerySubmitted="BoxCommand_QuerySubmitted"
+                                SuggestionChosen="BoxCommand_SuggestionChosen"
+                                KeyDown="BoxCommand_KeyDown"
+                                GotFocus="BoxCommand_GotFocus"
+                                LostFocus="BoxCommand_LostFocus"
+                                HorizontalAlignment="Stretch"
+                                Height="32"
+                                Canvas.ZIndex="0"/>
+
+                <TextBlock x:Name="GhostText"
+                           Margin="12,0,32,0"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False"
+                           FontSize="14"
+                           TextWrapping="NoWrap"
+                           Opacity="0.6"
+                           Canvas.ZIndex="1"
+                           Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
+            </Grid>
 
             <Button x:Name="BtnSend"
                     Grid.Column="1"
                     Content="Send"
-                    Click="BtnSend_Click"
-                    Margin="12,0,0,0"
-                    IsEnabled="False"/>
+                    Margin="8,0,0,0"
+                    VerticalAlignment="Stretch"
+                    Padding="16,0,16,0"
+                    Height="32"
+                    Click="BtnSend_Click"/>
         </Grid>
     </Grid>
 </page:ConsolePageBase>

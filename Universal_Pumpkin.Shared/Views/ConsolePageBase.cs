@@ -16,6 +16,8 @@ using Universal_Pumpkin.ViewModels;
 using Windows.UI.Xaml.Navigation;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
+using Universal_Pumpkin.Services;
+using System.Threading.Tasks;
 
 namespace Universal_Pumpkin.Shared.Views
 {
@@ -37,8 +39,14 @@ namespace Universal_Pumpkin.Shared.Views
         protected Grid _cachedStatusGrid;
         protected Button _cachedBtnStart, _cachedBtnStop, _cachedBtnRestart;
         protected AutoSuggestBox _cachedBoxCommand;
+        protected TextBlock _cachedGhostText;
         protected Button _cachedBtnSend;
         protected ProgressRing _cachedLoadingSpinner;
+        private ScrollViewer _cachedScrollViewer;
+
+        private List<string> _commandHistory = new List<string>();
+        private int _historyIndex = -1;
+        private string _currentPrediction = "";
 
         protected ConsolePageBase()
         {
@@ -68,6 +76,7 @@ namespace Universal_Pumpkin.Shared.Views
             _cachedBtnStop = this.FindName("BtnStop") as Button;
             _cachedBtnRestart = this.FindName("BtnRestartApp") as Button;
             _cachedBoxCommand = this.FindName("BoxCommand") as AutoSuggestBox;
+            _cachedGhostText = this.FindName("GhostText") as TextBlock;
             _cachedBtnSend = this.FindName("BtnSend") as Button;
             _cachedLoadingSpinner = this.FindName("LoadingSpinner") as ProgressRing;
 
@@ -104,7 +113,7 @@ namespace Universal_Pumpkin.Shared.Views
         // VM Event Handlers
         private async void Vm_MetricsUpdated(object sender, EventArgs e)
         {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            await RunOnUI(CoreDispatcherPriority.Normal, () =>
             {
                 if (_cachedTxtRam != null) _cachedTxtRam.Text = _vm.RamUsage;
                 if (_cachedTxtTps != null) _cachedTxtTps.Text = _vm.TpsText;
@@ -119,28 +128,50 @@ namespace Universal_Pumpkin.Shared.Views
             });
         }
 
+        protected async Task RunOnUI(CoreDispatcherPriority priority, Action action)
+        {
+            if (Dispatcher == null) return;
+
+            if (Dispatcher.HasThreadAccess)
+            {
+                action();
+            }
+            else
+            {
+                try
+                {
+                    await Dispatcher.RunAsync(priority, () => action());
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Dispatcher error: {ex.Message}");
+                }
+            }
+        }
+
         private async void Vm_LogReceived(object sender, LogEntry entry)
         {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Low, () =>
+            await RunOnUI(CoreDispatcherPriority.Low, async () =>
             {
                 _vm.LogItems.Add(entry);
 
                 bool passesFilter = _enabledFilters.Contains(entry.Level);
 
-                if (passesFilter && SearchBox != null && !string.IsNullOrEmpty(SearchBox.Text))
+                if (passesFilter && _cachedSearchBox != null && !string.IsNullOrEmpty(_cachedSearchBox.Text))
                 {
-                    var query = SearchBox.Text.Trim();
+                    var query = _cachedSearchBox.Text.Trim();
                     passesFilter = entry.Message.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
                                    entry.Level.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
                 }
-                
+
                 if (passesFilter)
                 {
                     _visibleLogItems.Add(entry);
 
-                    if (_autoScroll && _visibleLogItems.Count > 0)
+                    if (_autoScroll && _cachedScrollViewer != null)
                     {
-                        LogList.ScrollIntoView(_visibleLogItems[_visibleLogItems.Count - 1]);
+                        await Task.Delay(1);
+                        _cachedScrollViewer.ChangeView(null, _cachedScrollViewer.ScrollableHeight, null, true);
                     }
                 }
             });
@@ -215,19 +246,131 @@ namespace Universal_Pumpkin.Shared.Views
         }
 
         // Server Command Input
-        protected async void BoxCommand_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        protected void BoxCommand_GotFocus(object sender, RoutedEventArgs e)
         {
-            if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput) return;
-            var items = await _vm.GetSuggestionsAsync(sender.Text);
-            sender.ItemsSource = items;
+            if (!OSHelper.IsWin11Mode && _cachedGhostText != null)
+            {
+                _cachedGhostText.Foreground = new SolidColorBrush(Windows.UI.Colors.Black);
+                _cachedGhostText.Opacity = 0.6;
+            }
         }
 
-        protected void BoxCommand_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        protected void BoxCommand_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (!OSHelper.IsWin11Mode && _cachedGhostText != null)
+            {
+                _cachedGhostText.Foreground = (Brush)Application.Current.Resources["SystemControlForegroundBaseHighBrush"];
+                _cachedGhostText.Opacity = 0.6;
+            }
+        }
+
+        protected async void BoxCommand_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput)
+            {
+                if (args.Reason == AutoSuggestionBoxTextChangeReason.ProgrammaticChange)
+                    _cachedGhostText.Text = "";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(sender.Text))
+            {
+                sender.ItemsSource = null;
+                _cachedGhostText.Text = "";
+                _currentPrediction = "";
+                return;
+            }
+
+            var suggestions = await _vm.GetSuggestionsAsync(sender.Text);
+            sender.ItemsSource = suggestions;
+
+            if (suggestions.Count > 0)
+            {
+                string bestMatch = suggestions[0];
+                _currentPrediction = bestMatch;
+
+                if (bestMatch.StartsWith(sender.Text, StringComparison.OrdinalIgnoreCase))
+                {
+                    _cachedGhostText.Text = bestMatch;
+                }
+                else
+                {
+                    _cachedGhostText.Text = "";
+                }
+            }
+            else
+            {
+                _cachedGhostText.Text = "";
+                _currentPrediction = "";
+            }
+        }
+
+        protected void BoxCommand_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            var senderBox = sender as AutoSuggestBox;
+
+            if (e.Key == VirtualKey.Tab && !string.IsNullOrEmpty(_currentPrediction))
+            {
+                senderBox.Text = _currentPrediction;
+                _cachedGhostText.Text = "";
+                e.Handled = true;
+
+                var textBox = FindChild<TextBox>(senderBox);
+                if (textBox != null) textBox.SelectionStart = senderBox.Text.Length;
+                return;
+            }
+
+            if (e.Key == VirtualKey.Up)
+            {
+                if (_commandHistory.Count > 0)
+                {
+                    if (_historyIndex == -1) _historyIndex = _commandHistory.Count - 1;
+                    else if (_historyIndex > 0) _historyIndex--;
+
+                    senderBox.Text = _commandHistory[_historyIndex];
+                    e.Handled = true;
+                }
+            }
+
+            if (e.Key == VirtualKey.Down)
+            {
+                if (_historyIndex != -1)
+                {
+                    if (_historyIndex < _commandHistory.Count - 1)
+                    {
+                        _historyIndex++;
+                        senderBox.Text = _commandHistory[_historyIndex];
+                    }
+                    else
+                    {
+                        _historyIndex = -1;
+                        senderBox.Text = "";
+                    }
+                    e.Handled = true;
+                }
+            }
+        }
+
+        protected async void BoxCommand_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
             string command = string.IsNullOrEmpty(args.QueryText) ? sender.Text : args.QueryText;
+            if (string.IsNullOrWhiteSpace(command)) return;
+
+            if (_commandHistory.Count == 0 || _commandHistory.Last() != command)
+            {
+                _commandHistory.Add(command);
+            }
+            _historyIndex = -1;
+
             _vm.SendCommand(command);
-            BoxCommand.Text = "";
-            BoxCommand.Focus(FocusState.Programmatic);
+
+            sender.Text = "";
+            _cachedGhostText.Text = "";
+            _currentPrediction = "";
+            sender.Focus(FocusState.Programmatic);
+
+            ResumeAutoScroll();
+
         }
 
         protected void BoxCommand_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
@@ -264,13 +407,15 @@ namespace Universal_Pumpkin.Shared.Views
         }
 
         // Auto Scroll
+        private bool isAtBottom;
+
         private void TryHookScrollEvent()
         {
             LogList.ApplyTemplate();
-
             var sv = LogList.GetFirstDescendantOfType<ScrollViewer>();
             if (sv != null)
             {
+                _cachedScrollViewer = sv;
                 sv.ViewChanged -= LogScrollViewer_ViewChanged;
                 sv.ViewChanged += LogScrollViewer_ViewChanged;
             }
@@ -291,7 +436,7 @@ namespace Universal_Pumpkin.Shared.Views
 
             var sv = (ScrollViewer)sender;
 
-            bool isAtBottom = sv.VerticalOffset >= (sv.ScrollableHeight - 40);
+            isAtBottom = sv.VerticalOffset >= (sv.ScrollableHeight - 40);
 
             if (isAtBottom)
             {
@@ -313,20 +458,33 @@ namespace Universal_Pumpkin.Shared.Views
             }
         }
 
-        protected void ResumeAutoScroll_Click(object sender, RoutedEventArgs e)
+        protected async Task ResumeAutoScroll()
         {
-            _ignoreNextViewChanged = true;
-            _autoScroll = true;
-
-            if (ResumeAutoScrollButton != null)
-                ResumeAutoScrollButton.Visibility = Visibility.Collapsed;
-
-            if (LogList.Items.Count > 0)
+            if (_cachedScrollViewer != null && !isAtBottom)
             {
-                LogList.ScrollIntoView(LogList.Items[LogList.Items.Count - 1]);
+                _ignoreNextViewChanged = true;
+                _autoScroll = true;
+
+                if (ResumeAutoScrollButton != null)
+                    ResumeAutoScrollButton.Visibility = Visibility.Collapsed;
+
+                LogList.UpdateLayout();
+
+                await Task.Delay(1);
+
+                try
+                {
+                    _cachedScrollViewer.ChangeView(null, _cachedScrollViewer.ScrollableHeight, null, true);
+                }
+                catch {}
             }
         }
 
+        protected void ResumeAutoScroll_Click(object sender, RoutedEventArgs e)
+        {
+            ResumeAutoScroll();
+        }
+        
         // Search + Filtering
         protected void Search_Click(object sender, RoutedEventArgs e)
         {
@@ -365,7 +523,6 @@ namespace Universal_Pumpkin.Shared.Views
             if (LogList == null) return;
 
             var query = SearchBox?.Text?.Trim();
-
             var filtered = _vm.LogItems.Where(x => _enabledFilters.Contains(x.Level));
 
             if (!string.IsNullOrEmpty(query))
@@ -380,9 +537,9 @@ namespace Universal_Pumpkin.Shared.Views
                 _visibleLogItems.Add(item);
             }
 
-            if (_autoScroll && _visibleLogItems.Count > 0)
+            if (_autoScroll && _cachedScrollViewer != null)
             {
-                LogList.ScrollIntoView(_visibleLogItems[_visibleLogItems.Count - 1]);
+                _cachedScrollViewer.ChangeView(null, _cachedScrollViewer.ScrollableHeight, null, true);
             }
         }
 
