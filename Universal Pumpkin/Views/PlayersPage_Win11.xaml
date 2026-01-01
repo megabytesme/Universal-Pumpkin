@@ -1,7 +1,8 @@
-﻿<Page
+﻿<page:PlayersPageBase
     x:Class="Universal_Pumpkin.Views.Win11.PlayersPage_Win11"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:page="using:Universal_Pumpkin.Shared.Views"
     xmlns:local="using:Universal_Pumpkin"
     xmlns:models="using:Universal_Pumpkin.Models"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
@@ -406,4 +407,4 @@
             </Grid>
         </Grid>
     </muxc:NavigationView>
-</Page>
+</page:PlayersPageBase>
