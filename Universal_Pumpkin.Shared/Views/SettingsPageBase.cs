@@ -12,6 +12,9 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Documents;
 using Universal_Pumpkin.ViewModels;
+using Universal_Pumpkin.Models;
+using Universal_Pumpkin.Services;
+using System.Diagnostics;
 
 namespace Universal_Pumpkin.Shared.Views
 {
@@ -19,17 +22,24 @@ namespace Universal_Pumpkin.Shared.Views
     {
         protected readonly SettingsViewModel _vm;
         protected bool _loading = true;
+        protected bool _suppressAppearanceChange;
 
         protected SettingsPageBase()
         {
-            _vm = new SettingsViewModel();
+            try
+            {
+                _vm = new SettingsViewModel();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("[SettingsPageBase] Constructor FAILED: " + ex);
+                throw;
+            }
         }
 
         protected async Task LoadAllAsync()
         {
             _loading = true;
-
-            InitializeModernUiSection();
 
             await BindToggle(SwJava, "", "java_edition");
             await BindText(TxtJavaAddr, "", "java_edition_address");
@@ -78,35 +88,90 @@ namespace Universal_Pumpkin.Shared.Views
             _loading = false;
         }
 
-        protected abstract void InitializeModernUiSection();
+        protected void SetAppearance(AppearanceMode mode)
+        {
+            AppearanceService.Set(mode);
+            ApplyAppearanceWithoutRestart();
+        }
+
+        protected void ApplyAppearanceWithoutRestart()
+        {
+            var window = Window.Current;
+
+            window.Content = null;
+
+            var appResources = Application.Current.Resources;
+            appResources.MergedDictionaries.Clear();
+
+            switch (AppearanceService.Current)
+            {
+                case AppearanceMode.Win11:
+                    appResources.MergedDictionaries.Add(
+                        new ResourceDictionary { Source = new Uri("ms-appx:///Themes/Win11.xaml") });
+                    break;
+
+                case AppearanceMode.Win10_1709:
+                    appResources.MergedDictionaries.Add(
+                        new ResourceDictionary { Source = new Uri("ms-appx:///Themes/Win10_1709.xaml") });
+                    break;
+
+                default:
+                    appResources.MergedDictionaries.Add(
+                        new ResourceDictionary { Source = new Uri("ms-appx:///Themes/Win10_1507.xaml") });
+                    break;
+            }
+
+            var frame = new Frame();
+            window.Content = frame;
+
+            frame.Navigate(NavigationHelper.GetPageType("Shell"), null);
+
+            window.Activate();
+        }
+
+        protected AppearanceMode TagToMode(string tag)
+        {
+            if (tag == "1507")
+            {
+                return AppearanceMode.Win10_1507;
+            }
+
+            if (tag == "1709")
+            {
+                return AppearanceMode.Win10_1709;
+            }
+
+            if (tag == "11")
+            {
+                return AppearanceMode.Win11;
+            }
+
+            return AppearanceMode.Win10_1507;
+        }
+
+        protected string ModeToTag(AppearanceMode mode)
+        {
+            if (mode == AppearanceMode.Win10_1507)
+            {
+                return "1507";
+            }
+
+            if (mode == AppearanceMode.Win10_1709)
+            {
+                return "1709";
+            }
+
+            if (mode == AppearanceMode.Win11)
+            {
+                return "11";
+            }
+
+            return "1507";
+        }
 
         protected virtual ContentDialog CreateDialog()
         {
             return new ContentDialog();
-        }
-
-        protected async void SwModernUI_Toggled(object sender, RoutedEventArgs e)
-        {
-            if (_loading) return;
-            if (SwModernUI == null) return;
-
-            _vm.IsModernUIEnabled = SwModernUI.IsOn;
-
-            var dialog = CreateDialog();
-            dialog.Title = "Restart Required";
-            dialog.Content = "The app must restart to apply the theme change.";
-            dialog.PrimaryButtonText = "Restart Now";
-            dialog.SecondaryButtonText = "Later";
-
-            var result = await dialog.ShowAsync();
-            if (result == ContentDialogResult.Primary)
-            {
-#if UWP1709
-                await CoreApplication.RequestRestartAsync("");
-#else
-                CoreApplication.Exit();
-#endif
-            }
         }
 
         protected async void UpdateStorageSize()

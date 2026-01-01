@@ -1,69 +1,62 @@
 ﻿<page:SettingsPageBase
-        x:Class="Universal_Pumpkin.SettingsPage_Win10"
+        x:Class="Universal_Pumpkin.SettingsPage_Win10_1507"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:page="using:Universal_Pumpkin.Shared.Views"
-        Background="{ThemeResource AppBackgroundAcrylic}">
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
         <Page.Resources>
-                <Style x:Key="FluentCard"
+                <Style x:Key="GroupPanelStyle"
                        TargetType="StackPanel">
                         <Setter Property="Background"
-                                Value="{ThemeResource SystemControlAcrylicWindowBrush}"/>
+                                Value="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"/>
                         <Setter Property="Padding"
-                                Value="16"/>
-                        <Setter Property="Margin"
-                                Value="0,12,0,0"/>
+                                Value="15"/>
                         <Setter Property="BorderThickness"
                                 Value="1"/>
                         <Setter Property="BorderBrush"
                                 Value="{ThemeResource SystemControlForegroundBaseLowBrush}"/>
-                </Style>
-
-                <Style x:Key="FluentButton"
-                       TargetType="Button"
-                       BasedOn="{StaticResource ButtonRevealStyle}">
                         <Setter Property="Margin"
-                                Value="0,8,0,0"/>
+                                Value="10"/>
                 </Style>
-
-                <Style x:Key="FluentAppBarButton"
-                       TargetType="AppBarButton"
-                       BasedOn="{StaticResource AppBarButtonRevealStyle}"/>
         </Page.Resources>
 
         <ScrollViewer Padding="20">
                 <StackPanel Padding="15"
                             MaxWidth="800"
                             HorizontalAlignment="Center">
-
                         <TextBlock Text="Server Configuration"
                                    Style="{StaticResource TitleTextBlockStyle}"
                                    Margin="0,0,0,10"/>
-
                         <TextBlock Text="Note: You must restart the app for changes to take effect."
                                    Foreground="OrangeRed"
                                    FontWeight="Bold"
                                    TextWrapping="WrapWholeWords"/>
 
-                        <StackPanel x:Name="AppearanceCard"
-                                    Style="{StaticResource FluentCard}">
+                        <StackPanel  x:Name="AppearanceStackPanel"
+                                     Style="{StaticResource GroupPanelStyle}">
                                 <TextBlock Text="Appearance"
                                            Style="{StaticResource SubtitleTextBlockStyle}"/>
 
-                                <ToggleSwitch x:Name="SwModernUI"
-                                              Header="Use Windows 11 Visuals"
-                                              Toggled="SwModernUI_Toggled"/>
+                                <RadioButton Content="Windows 10 (1507)"
+                                             GroupName="AppearanceGroup"
+                                             Checked="AppearanceRadio_Checked"
+                                             Tag="1507"/>
 
-                                <TextBlock Text="Enable Mica, Rounded Corners, and new Icons."
-                                           FontSize="11"
-                                           Foreground="Gray"/>
+                                <RadioButton Content="Windows 10 (1709)"
+                                             GroupName="AppearanceGroup"
+                                             Checked="AppearanceRadio_Checked"
+                                             Tag="1709"/>
+
+                                <RadioButton Content="Windows 11"
+                                             GroupName="AppearanceGroup"
+                                             Checked="AppearanceRadio_Checked"
+                                             Tag="11"/>
                         </StackPanel>
 
-                        <StackPanel Style="{StaticResource FluentCard}">
+                        <StackPanel Style="{StaticResource GroupPanelStyle}">
                                 <TextBlock Text="Networking &amp; Protocols"
                                            Style="{StaticResource SubtitleTextBlockStyle}"/>
-
                                 <ToggleSwitch x:Name="SwJava"
                                               Header="Java Edition"
                                               Toggled="Setting_Toggled"
@@ -98,7 +91,6 @@
                                 <TextBlock Text="Advanced Networking (Features.toml)"
                                            Margin="0,10,0,0"
                                            FontWeight="SemiBold"/>
-
                                 <ToggleSwitch x:Name="SwLan"
                                               Header="LAN Broadcast (Disable if crashing)"
                                               Toggled="Feature_Toggled"
@@ -109,10 +101,9 @@
                                               Tag="networking.query|enabled"/>
                         </StackPanel>
 
-                        <StackPanel Style="{StaticResource FluentCard}">
+                        <StackPanel Style="{StaticResource GroupPanelStyle}">
                                 <TextBlock Text="Gameplay"
                                            Style="{StaticResource SubtitleTextBlockStyle}"/>
-
                                 <TextBox x:Name="TxtMotd"
                                          Header="MOTD"
                                          TextChanged="Setting_TextChanged"
@@ -127,7 +118,6 @@
                                         <ComboBoxItem Content="Adventure"/>
                                         <ComboBoxItem Content="Spectator"/>
                                 </ComboBox>
-
                                 <ToggleSwitch x:Name="SwForceGame"
                                               Header="Force Gamemode"
                                               Toggled="Setting_Toggled"
@@ -157,10 +147,9 @@
                                          Tag="seed"/>
                         </StackPanel>
 
-                        <StackPanel Style="{StaticResource FluentCard}">
+                        <StackPanel Style="{StaticResource GroupPanelStyle}">
                                 <TextBlock Text="Performance &amp; Limits"
                                            Style="{StaticResource SubtitleTextBlockStyle}"/>
-
                                 <TextBox x:Name="TxtMaxPlayers"
                                          Header="Max Players"
                                          InputScope="Number"
@@ -189,10 +178,9 @@
                                            Foreground="Gray"/>
                         </StackPanel>
 
-                        <StackPanel Style="{StaticResource FluentCard}">
+                        <StackPanel Style="{StaticResource GroupPanelStyle}">
                                 <TextBlock Text="Security"
                                            Style="{StaticResource SubtitleTextBlockStyle}"/>
-
                                 <TextBox x:Name="TxtOpLevel"
                                          Header="OP Permission Level (1-4)"
                                          InputScope="Number"
@@ -212,7 +200,7 @@
                                               Tag="allow_chat_reports"/>
                         </StackPanel>
 
-                        <StackPanel Style="{StaticResource FluentCard}"
+                        <StackPanel Style="{StaticResource GroupPanelStyle}"
                                     BorderBrush="Red">
                                 <TextBlock Text="Maintenance"
                                            Style="{StaticResource SubtitleTextBlockStyle}"
@@ -228,8 +216,7 @@
                                                    FontWeight="Bold"/>
                                 </StackPanel>
 
-                                <Grid ColumnSpacing="8"
-                                      Margin="0,0,0,8">
+                                <Grid Margin="0,0,0,8">
                                         <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="*"/>
@@ -242,7 +229,8 @@
                                                 Grid.Column="1"
                                                 Content="Restore Zip"
                                                 HorizontalAlignment="Stretch"
-                                                Click="BtnRestore_Click"/>
+                                                Click="BtnRestore_Click"
+                                                Margin="8,0,0,0"/>
                                 </Grid>
 
                                 <Button x:Name="BtnReset"
@@ -257,7 +245,7 @@
                                         HorizontalAlignment="Stretch"/>
                         </StackPanel>
 
-                        <StackPanel Style="{StaticResource FluentCard}">
+                        <StackPanel Style="{StaticResource GroupPanelStyle}">
                                 <TextBlock Text="Information"
                                            Style="{StaticResource SubtitleTextBlockStyle}"/>
                                 <Button Content="About Universal Pumpkin"

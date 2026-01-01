@@ -37,13 +37,21 @@
                     </StackPanel>
                 </muxc:Expander.Header>
 
-                <StackPanel Spacing="12">
-                    <ToggleSwitch x:Name="SwModernUI"
-                                  Header="Use Windows 11 Visuals"
-                                  Toggled="SwModernUI_Toggled"/>
-                    <TextBlock Text="Requires app restart to apply changes."
-                               FontSize="10"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                <StackPanel x:Name="AppearanceStackPanel" Spacing="12">
+                    <RadioButton Content="Windows 10 (1507)"
+                 GroupName="AppearanceGroup"
+                 Checked="AppearanceRadio_Checked"
+                 Tag="1507" />
+
+                    <RadioButton Content="Windows 10 (1709)"
+                 GroupName="AppearanceGroup"
+                 Checked="AppearanceRadio_Checked"
+                 Tag="1709" />
+
+                    <RadioButton Content="Windows 11"
+                 GroupName="AppearanceGroup"
+                 Checked="AppearanceRadio_Checked"
+                 Tag="11" />
                 </StackPanel>
             </muxc:Expander>
 

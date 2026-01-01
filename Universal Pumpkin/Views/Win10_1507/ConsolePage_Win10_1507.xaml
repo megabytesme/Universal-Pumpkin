@@ -1,5 +1,5 @@
 ﻿<page:ConsolePageBase
-    x:Class="Universal_Pumpkin.Shared.Views.ConsolePage_Win10"
+    x:Class="Universal_Pumpkin.Shared.Views.ConsolePage_Win10_1507"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -242,7 +242,7 @@
                                 Canvas.ZIndex="0"/>
 
                 <TextBlock x:Name="GhostText"
-                           Margin="12,0,32,0"
+                           Margin="12,-3,32,0"
                            VerticalAlignment="Center"
                            IsHitTestVisible="False"
                            FontSize="{ThemeResource ControlContentThemeFontSize}"

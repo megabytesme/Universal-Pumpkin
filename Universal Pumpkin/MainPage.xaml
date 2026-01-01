@@ -4,22 +4,25 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Background="{ThemeResource AppBackgroundAcrylic}">
+    mc:Ignorable="d">
 
     <Page.Resources>
         <AcrylicBrush x:Key="NavPaneAcrylic"
-                  BackgroundSource="HostBackdrop"
-                  TintColor="{ThemeResource SystemChromeMediumColor}"
-                  TintOpacity="0.6"
-                  FallbackColor="{ThemeResource SystemChromeMediumColor}" />
+                      BackgroundSource="HostBackdrop"
+                      TintColor="{ThemeResource SystemChromeMediumColor}"
+                      TintOpacity="0.6"
+                      FallbackColor="{ThemeResource SystemChromeMediumColor}"/>
 
-        <Style x:Key="HamburgerButtonStyle" TargetType="Button" BasedOn="{StaticResource ButtonRevealStyle}">
-            <Setter Property="Width" Value="48"/>
-            <Setter Property="Height" Value="48"/>
-            <Setter Property="Background" Value="Transparent"/>
+        <Style x:Key="HamburgerButtonStyle"
+               TargetType="Button"
+               BasedOn="{StaticResource ButtonRevealStyle}">
+            <Setter Property="Width"
+                    Value="48"/>
+            <Setter Property="Height"
+                    Value="48"/>
+            <Setter Property="Background"
+                    Value="Transparent"/>
         </Style>
-
     </Page.Resources>
 
     <SplitView x:Name="RootSplitView"
@@ -29,7 +32,7 @@
                OpenPaneLength="200">
 
         <SplitView.Pane>
-            <StackPanel Background="{ThemeResource SystemControlAcrylicWindowBrush}">
+            <StackPanel>
 
                 <Button x:Name="HamburgerButton"
                         Click="HamburgerButton_Click"
@@ -41,23 +44,43 @@
                                VerticalAlignment="Center"/>
                 </Button>
 
-                <ListBox x:Name="NavListBox" SelectionChanged="NavListBox_SelectionChanged" Background="Transparent">
+                <ListBox x:Name="NavListBox"
+                         SelectionChanged="NavListBox_SelectionChanged"
+                         Background="Transparent">
                     <ListBoxItem Tag="Console">
-                        <StackPanel Orientation="Horizontal" Padding="2">
-                            <TextBlock Text="&#xE7F8;" FontFamily="Segoe MDL2 Assets" FontSize="18" VerticalAlignment="Center"/>
-                            <TextBlock Text="Console" VerticalAlignment="Center" Margin="16,0,0,0"/>
+                        <StackPanel Orientation="Horizontal"
+                                    Padding="2">
+                            <TextBlock Text="&#xE7F8;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="18"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="Console"
+                                       VerticalAlignment="Center"
+                                       Margin="16,0,0,0"/>
                         </StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="Players">
-                        <StackPanel Orientation="Horizontal" Padding="2">
-                            <TextBlock Text="&#xE716;" FontFamily="Segoe MDL2 Assets" FontSize="18" VerticalAlignment="Center"/>
-                            <TextBlock Text="Players" VerticalAlignment="Center" Margin="16,0,0,0"/>
+                        <StackPanel Orientation="Horizontal"
+                                    Padding="2">
+                            <TextBlock Text="&#xE716;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="18"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="Players"
+                                       VerticalAlignment="Center"
+                                       Margin="16,0,0,0"/>
                         </StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="Settings">
-                        <StackPanel Orientation="Horizontal" Padding="2">
-                            <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="18" VerticalAlignment="Center"/>
-                            <TextBlock Text="Settings" VerticalAlignment="Center" Margin="16,0,0,0"/>
+                        <StackPanel Orientation="Horizontal"
+                                    Padding="2">
+                            <TextBlock Text="&#xE713;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="18"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="Settings"
+                                       VerticalAlignment="Center"
+                                       Margin="16,0,0,0"/>
                         </StackPanel>
                     </ListBoxItem>
                 </ListBox>
