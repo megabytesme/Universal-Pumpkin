@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Universal_Pumpkin.Models;
 using Windows.System;
 using Windows.UI.Xaml;
 
@@ -11,7 +13,7 @@ namespace Universal_Pumpkin.ViewModels
     {
         private DispatcherTimer _metricsTimer;
 
-        public event EventHandler<string> LogReceived;
+        public event EventHandler<LogEntry> LogReceived;
         public event EventHandler<int> ServerStopped;
         public event EventHandler MetricsUpdated;
 
@@ -20,7 +22,7 @@ namespace Universal_Pumpkin.ViewModels
         public bool IsTpsGood { get; private set; } = true;
         public string MsptText { get; private set; } = "0ms";
         public string LocalIpAddress { get; private set; }
-
+        public ObservableCollection<LogEntry> LogItems { get; } = new ObservableCollection<LogEntry>();
         public ConsoleViewModel()
         {
             _metricsTimer = new DispatcherTimer();
@@ -47,7 +49,25 @@ namespace Universal_Pumpkin.ViewModels
             _metricsTimer.Stop();
         }
 
-        public string GetInitialLog() => App.Server.GetLogHistory();
+        public async Task LoadInitialLogAsync()
+        {
+            var history = await Task.Run(() => App.Server.GetLogHistory());
+            if (string.IsNullOrEmpty(history))
+                return;
+
+            var lines = history.Split('\n')
+                               .Where(l => !string.IsNullOrWhiteSpace(l))
+                               .Select(LogParserHelper.Parse)
+                               .ToList();
+
+            await Windows.ApplicationModel.Core.CoreApplication.MainView.Dispatcher.RunAsync(
+                Windows.UI.Core.CoreDispatcherPriority.Low,
+                () =>
+                {
+                    foreach (var entry in lines)
+                        LogItems.Add(entry);
+                });
+        }
 
         public async Task StartServerAsync()
         {
@@ -100,7 +120,8 @@ namespace Universal_Pumpkin.ViewModels
 
         private void Controller_OnLogReceived(object sender, string e)
         {
-            LogReceived?.Invoke(this, e);
+            var entry = LogParserHelper.Parse(e);
+            LogReceived?.Invoke(this, entry);
         }
 
         private void Controller_OnServerStopped(object sender, int e)

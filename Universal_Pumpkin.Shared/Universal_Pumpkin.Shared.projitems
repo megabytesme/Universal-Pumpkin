@@ -9,7 +9,11 @@
     <Import_RootNamespace>Universal_Pumpkin.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\VisualTreeHelperExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\LogTemplateSelector.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\LogParserHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\NavigationHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\Models.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\UpdateService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Services\FirstRunService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\BackgroundKeeper.cs" />
@@ -21,9 +25,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\PlayersViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\SettingsViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\ConsoleViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\ConsolePageBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\OobePage.xaml.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\MainPage.xaml.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Views\ConsolePage.xaml.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\ConsolePage_Win10.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\PlayersPage.xaml.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\SettingsPage.xaml.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\ConfigHelper.cs" />
@@ -34,8 +39,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Core\PumpkinController.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)Models\" />
-    <Folder Include="$(MSBuildThisFileDirectory)Views\" />
     <Folder Include="$(MSBuildThisFileDirectory)Core\" />
     <Folder Include="$(MSBuildThisFileDirectory)Converters\" />
   </ItemGroup>

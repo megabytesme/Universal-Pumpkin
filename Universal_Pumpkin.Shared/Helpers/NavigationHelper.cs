@@ -1,5 +1,6 @@
 ﻿using System;
 using Universal_Pumpkin.Services;
+using Universal_Pumpkin.Shared.Views;
 #if UWP1709
 using Universal_Pumpkin.Views.Win11;
 #endif
@@ -22,7 +23,7 @@ namespace Universal_Pumpkin
                     return useModern ? typeof(ShellPage) : typeof(MainPage);
 
                 case "Console":
-                    return useModern ? typeof(ConsolePage_Win11) : typeof(ConsolePage);
+                    return useModern ? typeof(ConsolePage_Win11) : typeof(ConsolePage_Win10);
 
                 case "Players":
                     return useModern ? typeof(PlayersPage_Win11) : typeof(PlayersPage);
@@ -46,7 +47,7 @@ namespace Universal_Pumpkin
                     return typeof(MainPage);
 
                 case "Console":
-                    return typeof(ConsolePage);
+                    return typeof(ConsolePage_Win10);
 
                 case "Players":
                     return typeof(PlayersPage);
