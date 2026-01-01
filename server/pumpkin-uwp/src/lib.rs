@@ -336,6 +336,8 @@ pub extern "C" fn pumpkin_run_from_config_dir(config_dir_utf8: *const c_char) ->
     let result = std::panic::catch_unwind(|| unsafe {
         let _ = rustls_rustcrypto::provider().install_default();
 
+        let startup_time = std::time::Instant::now();
+
         if config_dir_utf8.is_null() {
             return -1;
         }
@@ -360,8 +362,44 @@ pub extern "C" fn pumpkin_run_from_config_dir(config_dir_utf8: *const c_char) ->
         } else {
             None
         };
-
         pumpkin::init_logger(&advanced_config, &config_dir, callback);
+
+        log::info!(
+            "============================================================================================"
+        );
+        log::info!(" Universal Pumpkin");
+        log::info!(" Unofficial Wrapper powered by the Pumpkin-MC Server Core");
+        log::info!(" Project Page: https://github.com/megabytesme/Universal-Pumpkin");
+        log::info!(
+            " Please report only UI issues here: https://github.com/megabytesme/Universal-Pumpkin/issues"
+        );
+        log::info!(
+            "============================================================================================"
+        );
+
+        log::info!("");
+
+        log::info!(
+            "Starting Pumpkin {} Minecraft (Protocol {})",
+            env!("CARGO_PKG_VERSION"),
+            pumpkin_data::packet::CURRENT_MC_PROTOCOL
+        );
+
+        log::info!(
+            "Build info: FAMILY: \"{}\", OS: \"{}\", ARCH: \"{}\", BUILD: \"{}\"",
+            std::env::consts::FAMILY,
+            std::env::consts::OS,
+            std::env::consts::ARCH,
+            if cfg!(debug_assertions) {
+                "Debug"
+            } else {
+                "Release"
+            }
+        );
+
+        log::warn!("Pumpkin is currently under heavy development!");
+        log::info!("Report issues on https://github.com/Pumpkin-MC/Pumpkin/issues");
+        log::info!("Join our Discord for community support: https://discord.com/invite/wT8XjrjKkf");
 
         let rt = match tokio::runtime::Builder::new_multi_thread()
             .enable_all()
@@ -383,7 +421,32 @@ pub extern "C" fn pumpkin_run_from_config_dir(config_dir_utf8: *const c_char) ->
             let _ = SERVER_INSTANCE.set(pumpkin_server.server.clone());
 
             pumpkin_server.init_plugins().await;
+
+            log::info!(
+                "Started server; took {}ms",
+                startup_time.elapsed().as_millis()
+            );
+
+            let b_cfg = &pumpkin_server.server.basic_config;
+            let mut connection_info = String::from("Server is now running. Connect using: ");
+
+            if b_cfg.java_edition {
+                connection_info.push_str(&format!("Java Edition: {}", b_cfg.java_edition_address));
+            }
+            if b_cfg.java_edition && b_cfg.bedrock_edition {
+                connection_info.push_str(" | ");
+            }
+            if b_cfg.bedrock_edition {
+                connection_info.push_str(&format!(
+                    "Bedrock Edition: {}",
+                    b_cfg.bedrock_edition_address
+                ));
+            }
+            log::info!("{}", connection_info);
+
             pumpkin_server.start().await;
+
+            log::info!("The server has stopped.");
             0
         })
     });

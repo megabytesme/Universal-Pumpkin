@@ -12,7 +12,6 @@ use std::io::{self, BufWriter};
 use std::path::PathBuf;
 use time::{Duration, OffsetDateTime, UtcOffset};
 
-const LOG_DIR: &str = "logs";
 const MAX_ATTEMPTS: u32 = 100;
 
 /// A wrapper for our logger to hold the terminal input while no input is expected in order to
@@ -27,7 +26,8 @@ struct GzipRollingLoggerData {
     pub current_day_of_month: u8,
     pub last_rotate_time: time::OffsetDateTime,
     pub latest_logger: WriteLogger<File>,
-    latest_filename: String,
+    pub latest_filename: String,
+    pub log_dir: PathBuf,
 }
 
 pub struct GzipRollingLogger {
@@ -42,24 +42,36 @@ impl GzipRollingLogger {
         config: Config,
         filename: String,
         base_path: &std::path::Path,
+        external_callback: Option<LogCallbackFn>, // Pass callback for early reporting
     ) -> Result<Box<Self>, Box<dyn std::error::Error>> {
         let now = time::OffsetDateTime::now_utc();
+
+        // UWP SHIM: Force absolute path inside probe_root
         let log_dir = base_path.join("logs");
         std::fs::create_dir_all(&log_dir)?;
 
         let latest_path = log_dir.join(&filename);
 
-        // If latest.log exists, we will gzip it
         if latest_path.exists() {
-            eprintln!(
+            let msg = format!(
                 "Found existing log file at '{}', gzipping it now...",
                 latest_path.display()
             );
 
-            let new_gz_path = Self::new_filename(true)?;
+            // Report to UWP UI via callback
+            if let Some(cb) = external_callback {
+                if let Ok(c_str) = std::ffi::CString::new(msg) {
+                    unsafe {
+                        (cb)(c_str.as_ptr());
+                    }
+                }
+            } else {
+                eprintln!("{}", msg);
+            }
+
+            let new_gz_path = Self::new_filename(true, &log_dir)?;
 
             let mut file = File::open(&latest_path)?;
-
             let mut encoder = GzEncoder::new(
                 BufWriter::new(File::create(&new_gz_path)?),
                 flate2::Compression::best(),
@@ -80,12 +92,16 @@ impl GzipRollingLogger {
                 last_rotate_time: now,
                 latest_filename: filename,
                 latest_logger: *new_logger,
+                log_dir, // Store absolute path for rotations
             }),
             config,
         }))
     }
 
-    pub fn new_filename(yesterday: bool) -> Result<PathBuf, Box<dyn std::error::Error>> {
+    pub fn new_filename(
+        yesterday: bool,
+        log_dir: &std::path::Path,
+    ) -> Result<PathBuf, Box<dyn std::error::Error>> {
         let local_offset = UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC);
         let mut now = OffsetDateTime::now_utc().to_offset(local_offset);
 
@@ -95,11 +111,8 @@ impl GzipRollingLogger {
 
         let date_format = format!("{}-{:02}-{:02}", now.year(), now.month() as u8, now.day());
 
-        let log_path = PathBuf::from(LOG_DIR);
-
         for id in 1..=MAX_ATTEMPTS {
-            let filename = log_path.join(format!("{date_format}-{id}.log.gz"));
-
+            let filename = log_dir.join(format!("{date_format}-{id}.log.gz"));
             if !filename.exists() {
                 return Ok(filename);
             }
@@ -107,16 +120,17 @@ impl GzipRollingLogger {
 
         Err(format!(
             "Failed to find a unique log filename for date {date_format} after {MAX_ATTEMPTS} attempts.",
-        )
-        .into())
+        ).into())
     }
 
     fn rotate_log(&self) -> Result<(), Box<dyn std::error::Error>> {
         let now = time::OffsetDateTime::now_utc();
         let mut data = self.data.lock().unwrap();
 
-        let new_gz_path = Self::new_filename(true)?;
-        let latest_path = PathBuf::from(LOG_DIR).join(&data.latest_filename);
+        // Use the stored absolute log_dir
+        let new_gz_path = Self::new_filename(true, &data.log_dir)?;
+        let latest_path = data.log_dir.join(&data.latest_filename);
+
         let mut file = File::open(&latest_path)?;
         let mut encoder = GzEncoder::new(
             BufWriter::new(File::create(&new_gz_path)?),

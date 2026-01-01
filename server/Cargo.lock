@@ -2509,6 +2509,7 @@ dependencies = [
  "log",
  "pumpkin",
  "pumpkin-config",
+ "pumpkin-data",
  "pumpkin-protocol",
  "pumpkin-util",
  "rustls",

@@ -112,18 +112,30 @@ pub fn init_logger(
 
     let mut shared_loggers: Vec<Box<dyn SharedLogger>> = Vec::new();
 
+    // File Logger (Absolute Path)
     if !advanced_config.logging.file.is_empty() {
         match GzipRollingLogger::new(
             level,
             log_config.clone(),
             advanced_config.logging.file.clone(),
             probe_root,
+            external_callback,
         ) {
             Ok(logger) => shared_loggers.push(logger),
-            Err(e) => eprintln!("Failed to initialize file logger: {e}"),
+            Err(e) => {
+                let err_msg = format!("Failed to initialize file logger: {e}");
+                if let Some(cb) = external_callback {
+                    if let Ok(c_str) = std::ffi::CString::new(err_msg) {
+                        unsafe {
+                            (cb)(c_str.as_ptr());
+                        }
+                    }
+                }
+            }
         }
     }
 
+    // Callback Logger (For UWP Console)
     if let Some(cb) = external_callback {
         shared_loggers.push(CallbackLogger::new(level, log_config.clone(), cb));
     }
