@@ -1,9 +1,9 @@
-﻿using Universal_Pumpkin.Shared.Views;
+﻿using System;
+using Universal_Pumpkin.Models;
+using Universal_Pumpkin.Services;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-#if UWP1709
-using Universal_Pumpkin.Services;
-#endif
+using Windows.UI.Xaml.Media;
 
 namespace Universal_Pumpkin
 {
@@ -12,7 +12,38 @@ namespace Universal_Pumpkin
         public MainPage()
         {
             this.InitializeComponent();
+            ApplyAppearanceStyling();
             NavListBox.SelectedIndex = 0;
+        }
+
+        private void ApplyAppearanceStyling()
+        {
+            var mode = AppearanceService.Current;
+
+            if (mode == AppearanceMode.Win10_1709)
+            {
+                try
+                {
+                    this.Background = (Brush)Application.Current.Resources["AppBackgroundAcrylic"];
+                }
+                catch
+                {
+                }
+
+                try
+                {
+                    RootSplitView.PaneBackground =
+                        (Brush)Application.Current.Resources["SystemControlAcrylicWindowBrush"];
+                }
+                catch
+                {
+                }
+            }
+            else
+            {
+                this.Background = (Brush)Application.Current.Resources["ApplicationPageBackgroundThemeBrush"];
+                RootSplitView.PaneBackground = (Brush)Application.Current.Resources["SystemControlBackgroundChromeMediumLowBrush"];
+            }
         }
 
         private void HamburgerButton_Click(object sender, RoutedEventArgs e)
@@ -25,14 +56,14 @@ namespace Universal_Pumpkin
             if (NavListBox.SelectedItem is ListBoxItem item)
             {
                 string tag = item.Tag.ToString();
-#if UWP1709
-                System.Type pageType = null;
+
+                Type pageType = null;
 
                 try
                 {
                     pageType = NavigationHelper.GetPageType(tag);
                 }
-                catch (System.ArgumentException)
+                catch (ArgumentException)
                 {
                     return;
                 }
@@ -41,20 +72,6 @@ namespace Universal_Pumpkin
                 {
                     ContentFrame.Navigate(pageType);
                 }
-#else
-                switch (tag)
-                {
-                    case "Console":
-                        ContentFrame.Navigate(typeof(ConsolePage_Win10));
-                        break;
-                    case "Players":
-                        ContentFrame.Navigate(typeof(PlayersPage_Win10));
-                        break;
-                    case "Settings":
-                        ContentFrame.Navigate(typeof(SettingsPage_Win10));
-                        break;
-                }
-#endif
             }
         }
     }

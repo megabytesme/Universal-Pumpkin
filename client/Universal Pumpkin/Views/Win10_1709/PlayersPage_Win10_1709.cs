@@ -2,11 +2,11 @@
 using Windows.UI.Xaml.Navigation;
 using Universal_Pumpkin.Shared.Views;
 
-namespace Universal_Pumpkin
+namespace Universal_Pumpkin.Views.Win10_1709
 {
-    public sealed partial class PlayersPage_Win10 : PlayersPageBase
+    public sealed partial class PlayersPage_Win10_1709 : PlayersPageBase
     {
-        public PlayersPage_Win10()
+        public PlayersPage_Win10_1709()
         {
             this.InitializeComponent();
         }

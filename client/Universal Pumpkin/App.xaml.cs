@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+using Universal_Pumpkin.Models;
 using Universal_Pumpkin.Services;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
@@ -46,21 +47,38 @@ namespace Universal_Pumpkin
         /// <param name="e">Details about the launch request and process.</param>
         protected override void OnLaunched(LaunchActivatedEventArgs e)
         {
-            if (OSHelper.IsWin11Mode)
+            try
             {
-                try
+                switch (AppearanceService.Current)
                 {
-                    var win11Dict = new ResourceDictionary
-                    {
-                        Source = new Uri("ms-appx:///Themes/Win11Resources.xaml")
-                    };
-
-                    this.Resources.MergedDictionaries.Add(win11Dict);
+                    case AppearanceMode.Win11:
+                        this.Resources.MergedDictionaries.Add(
+                            new ResourceDictionary
+                            {
+                                Source = new Uri("ms-appx:///Themes/Win11.xaml")
+                            });
+                        break;
+                    case AppearanceMode.Win10_1709:
+                        this.Resources.MergedDictionaries.Add(
+                            new ResourceDictionary
+                            {
+                                Source = new Uri("ms-appx:///Themes/Win10_1709.xaml")
+                            });
+                        break;
+                    case AppearanceMode.Win10_1507:
+                        this.Resources.MergedDictionaries.Add(
+                            new ResourceDictionary
+                            {
+                                Source = new Uri("ms-appx:///Themes/Win10_1507.xaml")
+                            });
+                        break;
+                    default:
+                        break;
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Failed to load WinUI: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to load theme resources: {ex.Message}");
             }
 
             Frame rootFrame = Window.Current.Content as Frame;
@@ -83,7 +101,7 @@ namespace Universal_Pumpkin
                 Window.Current.Content = rootFrame;
             }
 
-            if (e.PrelaunchActivated == false)
+            if (!e.PrelaunchActivated)
             {
                 if (rootFrame.Content == null)
                 {

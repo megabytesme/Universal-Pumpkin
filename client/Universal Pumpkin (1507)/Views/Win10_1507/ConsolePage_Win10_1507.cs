@@ -7,9 +7,9 @@ using Universal_Pumpkin.Shared.Views;
 
 namespace Universal_Pumpkin.Shared.Views
 {
-    public sealed partial class ConsolePage_Win10 : ConsolePageBase
+    public sealed partial class ConsolePage_Win10_1507 : ConsolePageBase
     {
-        public ConsolePage_Win10()
+        public ConsolePage_Win10_1507()
         {
             this.InitializeComponent();
         }

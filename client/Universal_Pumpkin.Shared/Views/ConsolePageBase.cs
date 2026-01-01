@@ -248,7 +248,7 @@ namespace Universal_Pumpkin.Shared.Views
         // Server Command Input
         protected void BoxCommand_GotFocus(object sender, RoutedEventArgs e)
         {
-            if (!OSHelper.IsWin11Mode && _cachedGhostText != null)
+            if (AppearanceService.Current != AppearanceMode.Win11 && _cachedGhostText != null)
             {
                 _cachedGhostText.Foreground = new SolidColorBrush(Windows.UI.Colors.Black);
                 _cachedGhostText.Opacity = 0.6;
@@ -257,9 +257,10 @@ namespace Universal_Pumpkin.Shared.Views
 
         protected void BoxCommand_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (!OSHelper.IsWin11Mode && _cachedGhostText != null)
+            if (AppearanceService.Current != AppearanceMode.Win11 && _cachedGhostText != null)
             {
-                _cachedGhostText.Foreground = (Brush)Application.Current.Resources["SystemControlForegroundBaseHighBrush"];
+                _cachedGhostText.Foreground =
+                    (Brush)Application.Current.Resources["SystemControlForegroundBaseHighBrush"];
                 _cachedGhostText.Opacity = 0.6;
             }
         }
