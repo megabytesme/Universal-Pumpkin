@@ -25,12 +25,14 @@
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\PlayersViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\SettingsViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\ConsoleViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\PlayersPageBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\SettingsPageBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\ConsolePageBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\OobePage.xaml.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\MainPage.xaml.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\ConsolePage_Win10.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Views\PlayersPage.xaml.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Views\SettingsPage.xaml.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\PlayersPage_Win10.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\SettingsPage_Win10.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\ConfigHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Converters\Converters.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\DataModels.cs" />

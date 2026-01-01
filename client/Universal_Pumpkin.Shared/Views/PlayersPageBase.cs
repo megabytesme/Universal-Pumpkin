@@ -1,48 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
+using Universal_Pumpkin.Models;
+using Universal_Pumpkin.ViewModels;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Navigation;
-using Universal_Pumpkin.Models;
-using Universal_Pumpkin.ViewModels;
-using System.Diagnostics;
-using System.Net;
-using System.Collections.ObjectModel;
 
-namespace Universal_Pumpkin
+namespace Universal_Pumpkin.Shared.Views
 {
-    public sealed partial class PlayersPage : Page
+    public abstract class PlayersPageBase : Page
     {
-        private readonly PlayersViewModel _vm;
-        private PlayerData _selectedPlayer;
+        protected readonly PlayersViewModel _vm;
+        protected PlayerData _selectedPlayer;
 
-        public ObservableCollection<PlayerData> PlayersList => _vm.PlayersList;
-
-        public PlayersPage()
+        protected PlayersPageBase()
         {
             _vm = new PlayersViewModel();
-
-            this.InitializeComponent();
             this.DataContext = this;
 
             _vm.PlayersUpdated += (s, e) =>
             {
-                if (NoPlayersText != null)
+                var noPlayers = FindName("NoPlayersText") as FrameworkElement;
+                if (noPlayers != null)
                 {
-                    NoPlayersText.Visibility = _vm.HasPlayers ? Visibility.Collapsed : Visibility.Visible;
+                    noPlayers.Visibility = _vm.HasPlayers ? Visibility.Collapsed : Visibility.Visible;
                 }
             };
         }
 
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            HandlePivotState();
-        }
+        public System.Collections.ObjectModel.ObservableCollection<PlayerData> PlayersList => _vm.PlayersList;
 
         protected override void OnNavigatedFrom(NavigationEventArgs e)
         {
@@ -50,43 +42,59 @@ namespace Universal_Pumpkin
             _vm.StopPolling();
         }
 
-        private void MainPivot_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        // --------- Section helpers (called from Win10/Win11 shells) ---------
+
+        protected void EnterOnlineSection()
         {
-            HandlePivotState();
+            _vm.StartPolling();
         }
 
-        private void HandlePivotState()
+        protected void EnterOpsSection()
         {
-            if (MainPivot.SelectedIndex == 0)
-            {
-                _vm.StartPolling();
-            }
-            else
-            {
-                _vm.StopPolling();
-                RefreshManagementData();
-            }
+            _vm.StopPolling();
+            RefreshManagementData(1);
         }
 
-        private async void RefreshManagementData()
+        protected void EnterBansSection()
+        {
+            _vm.StopPolling();
+            RefreshManagementData(2);
+        }
+
+        protected void EnterIpBansSection()
+        {
+            _vm.StopPolling();
+            RefreshManagementData(3);
+        }
+
+        protected async void RefreshManagementData(int mode)
         {
             try
             {
-                switch (MainPivot.SelectedIndex)
+                switch (mode)
                 {
                     case 1:
                         await _vm.LoadOps();
-                        ListOps.ItemsSource = _vm.OpsList;
+                        {
+                            var listOps = FindName("ListOps") as ListView;
+                            if (listOps != null) listOps.ItemsSource = _vm.OpsList;
+                        }
                         break;
 
                     case 2:
                         await _vm.LoadBans();
-                        ListBans.ItemsSource = _vm.BansList;
+                        {
+                            var listBans = FindName("ListBans") as ListView;
+                            if (listBans != null) listBans.ItemsSource = _vm.BansList;
+                        }
                         break;
 
                     case 3:
                         await _vm.LoadIpBans();
-                        ListIpBans.ItemsSource = _vm.IpBansList;
+                        {
+                            var listIpBans = FindName("ListIpBans") as ListView;
+                            if (listIpBans != null) listIpBans.ItemsSource = _vm.IpBansList;
+                        }
                         break;
                 }
             }
@@ -96,22 +104,58 @@ namespace Universal_Pumpkin
             }
         }
 
-        private void BtnRefresh_Click(object sender, RoutedEventArgs e) => _vm.StartPolling();
-        private void BtnRefreshManagement_Click(object sender, RoutedEventArgs e) => RefreshManagementData();
+        // --------- Dialog factory (Win11 overrides to set XamlRoot) ---------
 
-        private async void BtnAddOp_Click(object sender, RoutedEventArgs e)
+        protected virtual ContentDialog CreateDialog()
+        {
+            return new ContentDialog();
+        }
+
+        // --------- Toolbar buttons ---------
+
+        protected void BtnRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            _vm.StartPolling();
+        }
+
+        protected void BtnRefreshManagement_Click(object sender, RoutedEventArgs e)
+        {
+            // We infer which management view is active by visibility.
+            var listOps = FindName("ListOps") as ListView;
+            var listBans = FindName("ListBans") as ListView;
+            var listIpBans = FindName("ListIpBans") as ListView;
+
+            if (listOps != null && listOps.Visibility == Visibility.Visible)
+            {
+                RefreshManagementData(1);
+            }
+            else if (listBans != null && listBans.Visibility == Visibility.Visible)
+            {
+                RefreshManagementData(2);
+            }
+            else if (listIpBans != null && listIpBans.Visibility == Visibility.Visible)
+            {
+                RefreshManagementData(3);
+            }
+        }
+
+        protected async void BtnAddOp_Click(object sender, RoutedEventArgs e)
         {
             if (App.Server.IsRunning)
             {
                 var candidates = App.Server.GetPlayers().Where(p => p.PermissionLevel == 0).ToList();
-                if (candidates.Count == 0) { await ShowAlert("No eligible players online."); return; }
+                if (candidates.Count == 0)
+                {
+                    await ShowAlert("No eligible players online.");
+                    return;
+                }
 
                 var selected = await PromptPlayerSelection(candidates, "Select Player to OP");
                 if (selected != null)
                 {
                     _vm.SendCommand($"op {selected.Username}");
                     await Task.Delay(500);
-                    RefreshManagementData();
+                    RefreshManagementData(1);
                 }
             }
             else
@@ -122,15 +166,18 @@ namespace Universal_Pumpkin
                     try
                     {
                         await _vm.AddOp(name);
-                        RefreshManagementData();
+                        RefreshManagementData(1);
                         await ShowAlert($"Added {name} as OP.");
                     }
-                    catch { await ShowAlert("Could not resolve UUID. Check spelling."); }
+                    catch
+                    {
+                        await ShowAlert("Could not resolve UUID. Check spelling.");
+                    }
                 }
             }
         }
 
-        private async void BtnRemoveOp_Click(object sender, RoutedEventArgs e)
+        protected async void BtnRemoveOp_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is OpEntry op)
             {
@@ -145,14 +192,13 @@ namespace Universal_Pumpkin
                     {
                         _vm.SendCommand($"deop {op.Name}");
                         await Task.Delay(500);
-                        RefreshManagementData();
+                        RefreshManagementData(1);
                     }
                     else
                     {
                         App.Server.QueueOfflineDeop(op.Name);
 
                         op.IsPendingRemoval = true;
-
                         btn.Content = "Queued";
                         btn.IsEnabled = false;
 
@@ -162,19 +208,25 @@ namespace Universal_Pumpkin
                 else
                 {
                     await _vm.RemoveOp(op);
-                    RefreshManagementData();
+                    RefreshManagementData(1);
                 }
             }
         }
 
-        private async void BtnAddBan_Click(object sender, RoutedEventArgs e)
+        protected async void BtnAddBan_Click(object sender, RoutedEventArgs e)
         {
             if (App.Server.IsRunning)
             {
                 var online = App.Server.GetPlayers();
-                if (online.Count == 0) { await ShowAlert("No players online."); return; }
+                if (online.Count == 0)
+                {
+                    await ShowAlert("No players online.");
+                    return;
+                }
+
                 var selected = await PromptPlayerSelection(online, "Select Player to Ban");
-                if (selected != null) await ShowBanDialog(selected.Username);
+                if (selected != null)
+                    await ShowBanDialog(selected.Username);
             }
             else
             {
@@ -184,7 +236,7 @@ namespace Universal_Pumpkin
                 try
                 {
                     await _vm.AddBan(name, "Banned via Offline Console");
-                    RefreshManagementData();
+                    RefreshManagementData(2);
                     await ShowAlert($"Successfully banned {name}.");
                 }
                 catch
@@ -194,7 +246,7 @@ namespace Universal_Pumpkin
             }
         }
 
-        private async void BtnRemoveBan_Click(object sender, RoutedEventArgs e)
+        protected async void BtnRemoveBan_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is BanEntry ban)
             {
@@ -207,11 +259,11 @@ namespace Universal_Pumpkin
                 {
                     await _vm.RemoveBan(ban);
                 }
-                RefreshManagementData();
+                RefreshManagementData(2);
             }
         }
 
-        private async void BtnAddIpBan_Click(object sender, RoutedEventArgs e)
+        protected async void BtnAddIpBan_Click(object sender, RoutedEventArgs e)
         {
             string ip = await PromptString("Enter IP to Ban:");
             if (string.IsNullOrWhiteSpace(ip)) return;
@@ -247,7 +299,6 @@ namespace Universal_Pumpkin
                 foreach (var p in online)
                 {
                     string pIp = p.IpAddress.Contains(":") ? p.IpAddress.Split(':')[0] : p.IpAddress;
-
                     if (pIp == ip)
                     {
                         matchingPlayers.Add(p.Username);
@@ -261,13 +312,11 @@ namespace Universal_Pumpkin
                 }
             }
 
-            var confirmDialog = new ContentDialog
-            {
-                Title = $"Ban IP {ip}?",
-                Content = panel,
-                PrimaryButtonText = "Ban IP",
-                SecondaryButtonText = "Cancel"
-            };
+            var confirmDialog = CreateDialog();
+            confirmDialog.Title = $"Ban IP {ip}?";
+            confirmDialog.Content = panel;
+            confirmDialog.PrimaryButtonText = "Ban IP";
+            confirmDialog.SecondaryButtonText = "Cancel";
 
             if (await confirmDialog.ShowAsync() == ContentDialogResult.Primary)
             {
@@ -279,7 +328,8 @@ namespace Universal_Pumpkin
 
                     if (playerBanCheck.Visibility == Visibility.Visible && playerBanCheck.IsChecked == true)
                     {
-                        foreach (var name in matchingPlayers) _vm.SendCommand($"ban {name} \"{reason}\"");
+                        foreach (var name in matchingPlayers)
+                            _vm.SendCommand($"ban {name} \"{reason}\"");
                     }
 
                     await Task.Delay(500);
@@ -288,11 +338,12 @@ namespace Universal_Pumpkin
                 {
                     await _vm.AddIpBan(ip, reason);
                 }
-                RefreshManagementData();
+
+                RefreshManagementData(3);
             }
         }
 
-        private async void BtnRemoveIpBan_Click(object sender, RoutedEventArgs e)
+        protected async void BtnRemoveIpBan_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is IpBanEntry ipBan)
             {
@@ -305,11 +356,13 @@ namespace Universal_Pumpkin
                 {
                     await _vm.RemoveIpBan(ipBan);
                 }
-                RefreshManagementData();
+                RefreshManagementData(3);
             }
         }
 
-        private void BtnRemoveEntry_Click(object sender, RoutedEventArgs e)
+        // --------- Management list generic remove (Win10) ---------
+
+        protected void BtnRemoveEntry_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag != null)
             {
@@ -319,23 +372,25 @@ namespace Universal_Pumpkin
             }
         }
 
-        private async Task<PlayerData> PromptPlayerSelection(List<PlayerData> candidates, string title)
+        // --------- Dialog helpers ---------
+
+        protected async Task<PlayerData> PromptPlayerSelection(List<PlayerData> candidates, string title)
         {
+            var template = this.Resources["PlayerPickerTemplate"] as DataTemplate;
+
             var listView = new ListView
             {
                 SelectionMode = ListViewSelectionMode.Single,
                 ItemsSource = candidates,
                 Height = 300,
-                ItemTemplate = this.Resources["PlayerPickerTemplate"] as DataTemplate
+                ItemTemplate = template
             };
 
-            var dialog = new ContentDialog
-            {
-                Title = title,
-                Content = listView,
-                PrimaryButtonText = "Select",
-                SecondaryButtonText = "Cancel"
-            };
+            var dialog = CreateDialog();
+            dialog.Title = title;
+            dialog.Content = listView;
+            dialog.PrimaryButtonText = "Select";
+            dialog.SecondaryButtonText = "Cancel";
 
             if (await dialog.ShowAsync() == ContentDialogResult.Primary)
             {
@@ -344,79 +399,121 @@ namespace Universal_Pumpkin
             return null;
         }
 
-        private async Task ShowBanDialog(string username)
+        protected async Task ShowBanDialog(string username)
         {
-            var reasonBox = new TextBox { PlaceholderText = "Reason (Optional)", Margin = new Thickness(0, 0, 0, 10) };
-            var ipCheck = new CheckBox { Content = "Also ban IP Address" };
+            var reasonBox = new TextBox
+            {
+                PlaceholderText = "Reason (Optional)",
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            var ipCheck = new CheckBox
+            {
+                Content = "Also ban IP Address"
+            };
 
             var panel = new StackPanel();
             panel.Children.Add(reasonBox);
             panel.Children.Add(ipCheck);
 
-            var dialog = new ContentDialog
-            {
-                Title = $"Ban {username}?",
-                Content = panel,
-                PrimaryButtonText = "Ban",
-                SecondaryButtonText = "Cancel"
-            };
+            var dialog = CreateDialog();
+            dialog.Title = $"Ban {username}?";
+            dialog.Content = panel;
+            dialog.PrimaryButtonText = "Ban";
+            dialog.SecondaryButtonText = "Cancel";
 
             if (await dialog.ShowAsync() == ContentDialogResult.Primary)
             {
                 string reason = string.IsNullOrWhiteSpace(reasonBox.Text) ? "Banned by operator" : reasonBox.Text;
                 _vm.SendCommand($"ban {username} \"{reason}\"");
 
-                if (ipCheck.IsChecked == true) _vm.SendCommand($"ban-ip {username} \"{reason}\"");
+                if (ipCheck.IsChecked == true)
+                    _vm.SendCommand($"ban-ip {username} \"{reason}\"");
 
                 await Task.Delay(500);
-                RefreshManagementData();
+                RefreshManagementData(2);
             }
         }
 
-        private async Task<string> PromptString(string title)
+        protected async Task<string> PromptString(string title)
         {
             var box = new TextBox();
-            var dialog = new ContentDialog { Title = title, Content = box, PrimaryButtonText = "OK", SecondaryButtonText = "Cancel" };
+
+            var dialog = CreateDialog();
+            dialog.Title = title;
+            dialog.Content = box;
+            dialog.PrimaryButtonText = "OK";
+            dialog.SecondaryButtonText = "Cancel";
+
             return await dialog.ShowAsync() == ContentDialogResult.Primary ? box.Text : null;
         }
 
-        private async Task ShowAlert(string msg)
+        protected async Task ShowAlert(string msg)
         {
-            await new ContentDialog { Title = "Info", Content = msg, PrimaryButtonText = "OK" }.ShowAsync();
+            var dialog = CreateDialog();
+            dialog.Title = "Info";
+            dialog.Content = msg;
+            dialog.PrimaryButtonText = "OK";
+            await dialog.ShowAsync();
         }
 
-        private void Player_RightTapped(object sender, RightTappedRoutedEventArgs e) => ShowMenu(sender, e.OriginalSource);
-        private void Player_Holding(object sender, HoldingRoutedEventArgs e) { if (e.HoldingState == Windows.UI.Input.HoldingState.Started) ShowMenu(sender, e.OriginalSource); }
+        // --------- Context menu handlers ---------
 
-        private void ShowMenu(object sender, object originalSource)
+        protected void Player_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            ShowMenu(sender);
+        }
+
+        protected void Player_Holding(object sender, HoldingRoutedEventArgs e)
+        {
+            if (e.HoldingState == Windows.UI.Input.HoldingState.Started)
+                ShowMenu(sender);
+        }
+
+        private void ShowMenu(object sender)
         {
             if (sender is FrameworkElement element)
             {
                 _selectedPlayer = element.DataContext as PlayerData;
-                if (_selectedPlayer != null) FlyoutBase.ShowAttachedFlyout(element);
+                if (_selectedPlayer != null)
+                    FlyoutBase.ShowAttachedFlyout(element);
             }
         }
 
-        private void Menu_Op_Click(object sender, RoutedEventArgs e) { if (_selectedPlayer != null) _vm.SendCommand($"op {_selectedPlayer.Username}"); }
-        private void Menu_Deop_Click(object sender, RoutedEventArgs e) { if (_selectedPlayer != null) _vm.SendCommand($"deop {_selectedPlayer.Username}"); }
-        private void Menu_Gm_Click(object sender, RoutedEventArgs e) { if (_selectedPlayer != null && sender is MenuFlyoutItem item) _vm.SendCommand($"gamemode {item.Tag} {_selectedPlayer.Username}"); }
+        protected void Menu_Op_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedPlayer != null)
+                _vm.SendCommand($"op {_selectedPlayer.Username}");
+        }
 
-        private async void Menu_Kick_Click(object sender, RoutedEventArgs e)
+        protected void Menu_Deop_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedPlayer != null)
+                _vm.SendCommand($"deop {_selectedPlayer.Username}");
+        }
+
+        protected void Menu_Gm_Click(object sender, RoutedEventArgs e)
+        {
+            if (_selectedPlayer != null && sender is MenuFlyoutItem item)
+                _vm.SendCommand($"gamemode {item.Tag} {_selectedPlayer.Username}");
+        }
+
+        protected async void Menu_Kick_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedPlayer == null) return;
             string reason = await PromptString($"Kick {_selectedPlayer.Username}? (Reason)") ?? "Kicked by operator";
             _vm.SendCommand($"kick {_selectedPlayer.Username} \"{reason}\"");
         }
 
-        private async void Menu_Ban_Click(object sender, RoutedEventArgs e)
+        protected async void Menu_Ban_Click(object sender, RoutedEventArgs e)
         {
             if (_selectedPlayer == null) return;
             await ShowBanDialog(_selectedPlayer.Username);
         }
 
-        private void Menu_BanIp_Click(object sender, RoutedEventArgs e)
+        protected void Menu_BanIp_Click(object sender, RoutedEventArgs e)
         {
-            if (_selectedPlayer != null) _vm.SendCommand($"ban-ip {_selectedPlayer.Username}");
+            if (_selectedPlayer != null)
+                _vm.SendCommand($"ban-ip {_selectedPlayer.Username}");
         }
     }
 }

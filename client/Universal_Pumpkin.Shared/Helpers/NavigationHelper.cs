@@ -26,10 +26,10 @@ namespace Universal_Pumpkin
                     return useModern ? typeof(ConsolePage_Win11) : typeof(ConsolePage_Win10);
 
                 case "Players":
-                    return useModern ? typeof(PlayersPage_Win11) : typeof(PlayersPage);
+                    return useModern ? typeof(PlayersPage_Win11) : typeof(PlayersPage_Win10);
 
                 case "Settings":
-                    return useModern ? typeof(SettingsPage_Win11) : typeof(SettingsPage);
+                    return useModern ? typeof(SettingsPage_Win11) : typeof(SettingsPage_Win10);
 
                 default:
                     throw new ArgumentException($"Unknown page key: {pageKey}");
@@ -50,10 +50,10 @@ namespace Universal_Pumpkin
                     return typeof(ConsolePage_Win10);
 
                 case "Players":
-                    return typeof(PlayersPage);
+                    return typeof(PlayersPage_Win10);
 
                 case "Settings":
-                    return typeof(SettingsPage);
+                    return typeof(SettingsPage_Win10);
 
                 default:
                     throw new ArgumentException($"Unknown page key: {pageKey}");

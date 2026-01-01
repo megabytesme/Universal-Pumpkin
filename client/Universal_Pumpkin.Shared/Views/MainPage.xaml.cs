@@ -48,10 +48,10 @@ namespace Universal_Pumpkin
                         ContentFrame.Navigate(typeof(ConsolePage_Win10));
                         break;
                     case "Players":
-                        ContentFrame.Navigate(typeof(PlayersPage));
+                        ContentFrame.Navigate(typeof(PlayersPage_Win10));
                         break;
                     case "Settings":
-                        ContentFrame.Navigate(typeof(SettingsPage));
+                        ContentFrame.Navigate(typeof(SettingsPage_Win10));
                         break;
                 }
 #endif
