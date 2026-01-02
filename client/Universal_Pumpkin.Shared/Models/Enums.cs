@@ -6,4 +6,11 @@
         Win10_1709,
         Win11
     }
+
+    public enum OobePermissionStatus
+    {
+        Allowed,
+        Denied,
+        Restricted
+    }
 }

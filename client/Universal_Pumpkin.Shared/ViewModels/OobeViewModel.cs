@@ -7,6 +7,7 @@ using Windows.ApplicationModel.Background;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using Universal_Pumpkin.Helpers;
+using Universal_Pumpkin.Models;
 
 namespace Universal_Pumpkin.ViewModels
 {
@@ -14,33 +15,27 @@ namespace Universal_Pumpkin.ViewModels
     {
         public event EventHandler<string> StatusMessage;
         public event EventHandler RestoreCompleted;
-        
-        public async Task<string> RequestBackgroundPermission()
+
+        public async Task<OobePermissionStatus> RequestBackgroundPermission()
         {
             bool allowed = await BackgroundKeeper.RequestKeepAlive();
-            if (allowed) return "Background execution allowed! The server will run minimized.";
+            if (allowed)
+                return OobePermissionStatus.Allowed;
 
             var status = await BackgroundExecutionManager.RequestAccessAsync();
+
 #if UWP1709
-            if (status == BackgroundAccessStatus.Denied ||
-                status == BackgroundAccessStatus.DeniedByUser)
-            {
-                return "Permission Denied. Please enable 'Background Apps' in Windows Settings.";
-            }
+    if (status == BackgroundAccessStatus.Denied ||
+        status == BackgroundAccessStatus.DeniedByUser)
+        return OobePermissionStatus.Denied;
 #else
             if (status == BackgroundAccessStatus.Denied)
-            {
-                return "Permission Denied. Please enable 'Background Apps' in Windows Settings.";
-            }
+                return OobePermissionStatus.Denied;
 #endif
-            return "Background execution is currently restricted by the OS.";
-        }
 
-        public async void OpenSettings()
-        {
-            await BackgroundKeeper.OpenBackgroundSettings();
+            return OobePermissionStatus.Restricted;
         }
-        
+       
         public async Task RestoreBackup()
         {
             var openPicker = new FileOpenPicker

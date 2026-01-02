@@ -28,6 +28,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\PlayersViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\SettingsViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModels\ConsoleViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Views\OobePageBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\PlayersPageBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\SettingsPageBase.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Views\ConsolePageBase.cs" />

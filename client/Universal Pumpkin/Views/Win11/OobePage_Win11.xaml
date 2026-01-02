@@ -1,5 +1,6 @@
-﻿<Page
+﻿<page:OobePageBase
     x:Class="Universal_Pumpkin.Views.Win11.OobePage_Win11"
+    xmlns:page="using:Universal_Pumpkin.Shared.Views"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
@@ -42,11 +43,10 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <FlipView x:Name="OobeFlipView"
-                  SelectionChanged="OobeFlipView_SelectionChanged">
+                  muxc:BackdropMaterial.ApplyToRootOrPageBackground="True">
 
             <!-- 1. WELCOME -->
             <FlipViewItem>
@@ -62,7 +62,7 @@
                                    FontSize="32"
                                    HorizontalAlignment="Center"
                                    TextWrapping="WrapWholeWords"/>
-                        <TextBlock Text="A modern, high-performance Minecraft server wrapper."
+                        <TextBlock Text="Empowering everyone to host fast and efficient Minecraft servers on Universal Windows Platform (UWP) supporting devices."
                                    Style="{ThemeResource SubtitleTextBlockStyle}"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    HorizontalAlignment="Center"
@@ -120,10 +120,6 @@
                             <StackPanel Orientation="Horizontal"
                                         Spacing="12"
                                         Margin="0,12,0,0">
-                                <TextBlock x:Name="TxtPermStatus"
-                                           VerticalAlignment="Center"
-                                           Foreground="{ThemeResource SystemFillColorSuccessBrush}"
-                                           FontWeight="Bold"/>
                             </StackPanel>
 
                             <Button Content="Next"
@@ -215,12 +211,5 @@
                 </Border>
             </FlipViewItem>
         </FlipView>
-
-        <muxc:PipsPager x:Name="Pager"
-                        Grid.Row="1"
-                        NumberOfPages="4"
-                        Margin="0,0,0,24"
-                        SelectedPageIndex="{x:Bind OobeFlipView.SelectedIndex, Mode=OneWay}"
-                        Visibility="Visible"/>
     </Grid>
-</Page>
+</page:OobePageBase>
