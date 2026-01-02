@@ -16,22 +16,51 @@ namespace Universal_Pumpkin.Helpers
             @"(https?://[^\s]+)",
             RegexOptions.Compiled);
 
+        private static readonly Regex MetadataDetector = new Regex(
+            @"^.*?(\d{2}:\d{2}:\d{2})?.*\[(INFO|WARN|ERROR|FATAL|DEBUG|TRACE)\].*?",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        private static readonly Regex AnsiStripper = new Regex(
+            @"\x1B\[[^@-~]*[@-~]|\x1B\]8;.*?\x1B\\",
+            RegexOptions.Compiled);
+        
+        private static readonly Regex TagStripper = new Regex(
+            @"^(\x1b\[[0-9;]*m)*\s*\[(INFO|WARN|ERROR|FATAL|DEBUG|TRACE)\]\s*",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
         public static LogEntry Parse(string rawLine)
         {
             var entry = new LogEntry { Message = rawLine };
+
+            string cleanLine = AnsiStripper.Replace(rawLine, "");
+            var metaMatch = MetadataDetector.Match(cleanLine);
+
+            if (metaMatch.Success)
+            {
+                if (metaMatch.Groups[2].Success)
+                {
+                    entry.Level = metaMatch.Groups[2].Value.ToUpper();
+                }
+
+                if (metaMatch.Groups[1].Success && TimeSpan.TryParse(metaMatch.Groups[1].Value, out var time))
+                {
+                    entry.Timestamp = DateTime.Today.Add(time);
+                }
+            }
+            
+            string visualLine = TagStripper.Replace(rawLine, "$1");
+
             var segments = new List<LogSegment>();
             var currentStyle = new AnsiStyle();
-
             var linkStack = new Stack<string>();
 
             int lastIndex = 0;
 
-            foreach (Match match in Tokenizer.Matches(rawLine))
+            foreach (Match match in Tokenizer.Matches(visualLine))
             {
                 if (match.Index > lastIndex)
                 {
-                    string text = rawLine.Substring(lastIndex, match.Index - lastIndex);
-
+                    string text = visualLine.Substring(lastIndex, match.Index - lastIndex);
                     AddTextSegments(segments, text, currentStyle, linkStack);
                 }
 
@@ -44,7 +73,6 @@ namespace Universal_Pumpkin.Helpers
                 else if (token.StartsWith("\x1b]8;"))
                 {
                     string content = token.Substring(4, token.Length - 6);
-
                     int firstSemi = content.IndexOf(';');
                     string url = (firstSemi >= 0) ? content.Substring(firstSemi + 1) : content;
 
@@ -61,9 +89,9 @@ namespace Universal_Pumpkin.Helpers
                 lastIndex = match.Index + match.Length;
             }
 
-            if (lastIndex < rawLine.Length)
+            if (lastIndex < visualLine.Length)
             {
-                string text = rawLine.Substring(lastIndex);
+                string text = visualLine.Substring(lastIndex);
                 AddTextSegments(segments, text, currentStyle, linkStack);
             }
 
@@ -99,7 +127,6 @@ namespace Universal_Pumpkin.Helpers
                 }
 
                 segments.Add(CreateManualSegment(m.Value, style, m.Value));
-
                 lastIdx = m.Index + m.Length;
             }
 
@@ -138,12 +165,10 @@ namespace Universal_Pumpkin.Helpers
 
         private static LogSegment CreateManualSegment(string text, AnsiStyle style, string targetUrl)
         {
-            var segStyle = style.Clone();
-
             return new LogSegment
             {
                 Text = text,
-                Style = segStyle,
+                Style = style.Clone(),
                 HyperlinkTarget = targetUrl,
                 Tooltip = null
             };
