@@ -18,19 +18,17 @@ using System.Diagnostics;
 using System.Collections.ObjectModel;
 using Universal_Pumpkin.Services;
 using System.Threading.Tasks;
+using Windows.UI.Xaml.Documents;
+using System.Collections.Concurrent;
 
 namespace Universal_Pumpkin.Shared.Views
 {
     public abstract class ConsolePageBase : Page
     {
         protected readonly ConsoleViewModel _vm;
-        protected readonly ObservableCollection<LogEntry> _visibleLogItems = new ObservableCollection<LogEntry>();
 
         protected bool _autoScroll = true;
         protected bool _ignoreNextViewChanged = false;
-
-        protected readonly HashSet<string> _enabledFilters =
-            new HashSet<string> { "INFO", "WARN", "ERROR", "DEBUG" };
 
         protected ListView _cachedLogList;
         protected TextBox _cachedSearchBox;
@@ -48,15 +46,141 @@ namespace Universal_Pumpkin.Shared.Views
         private int _historyIndex = -1;
         private string _currentPrediction = "";
 
+        private bool isAtBottom;
+
         protected ConsolePageBase()
         {
             _vm = new ConsoleViewModel();
+
+            InlineHelper.RunCommandCallback = (cmd) =>
+            {
+                _vm.SendCommand(cmd);
+            };
+
+            InlineHelper.SuggestCommandCallback = (cmd) =>
+            {
+                BoxCommand.Text = cmd;
+                BoxCommand.Focus(FocusState.Programmatic);
+            };
 
             _vm.LogReceived += Vm_LogReceived;
             _vm.ServerStopped += Vm_ServerStopped;
             _vm.MetricsUpdated += Vm_MetricsUpdated;
 
             Window.Current.CoreWindow.KeyDown += CoreWindow_KeyDown;
+        }
+
+        private static string NormalizeMcCommand(string cmd)
+        {
+            if (string.IsNullOrWhiteSpace(cmd))
+                return cmd;
+
+            if (cmd.StartsWith("/"))
+                return cmd.Substring(1);
+
+            return cmd;
+        }
+
+        protected void LogMessageTextBlock_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBlock tb && tb.DataContext is LogEntry entry)
+            {
+                tb.Inlines.Clear();
+
+                if (entry.Segments == null || entry.Segments.Count == 0)
+                {
+                    tb.Inlines.Add(new Run { Text = entry.Message });
+                    return;
+                }
+
+                foreach (var seg in entry.Segments)
+                {
+                    Inline inline;
+                    if (!string.IsNullOrEmpty(seg.HyperlinkTarget))
+                    {
+                        var link = new Hyperlink();
+                        link.Inlines.Add(new Run { Text = seg.Text });
+                        link.Click += LogHyperlink_Click;
+                        HyperlinkExtensions.SetTarget(link, seg.HyperlinkTarget);
+                        inline = link;
+                    }
+                    else
+                    {
+                        inline = new Run { Text = seg.Text };
+                    }
+
+                    ApplyAnsiStyleToInline(inline, seg.Style);
+                    tb.Inlines.Add(inline);
+                }
+            }
+        }
+
+        private async void LogHyperlink_Click(Hyperlink sender, HyperlinkClickEventArgs args)
+        {
+            var target = HyperlinkExtensions.GetTarget(sender);
+            if (string.IsNullOrEmpty(target))
+                return;
+
+            try
+            {
+                if (target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                    target.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                {
+                    await Launcher.LaunchUriAsync(new Uri(target));
+                }
+                else if (target.StartsWith("mc:copy_to_clipboard:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var value = target.Substring("mc:copy_to_clipboard:".Length);
+                    var dp = new DataPackage();
+                    dp.SetText(value);
+                    Clipboard.SetContent(dp);
+                }
+                else if (target.StartsWith("mc:run_command:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var cmd = target.Substring("mc:run_command:".Length);
+                    _vm.SendCommand(NormalizeMcCommand(cmd));
+                }
+                else if (target.StartsWith("mc:suggest_command:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var cmd = target.Substring("mc:suggest_command:".Length);
+                    BoxCommand.Text = NormalizeMcCommand(cmd);
+                    BoxCommand.Focus(FocusState.Programmatic);
+                }
+                else if (target.StartsWith("mc:change_page:", StringComparison.OrdinalIgnoreCase))
+                {
+                    // No-op for now
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Hyperlink click error: {ex.Message}");
+            }
+        }
+
+        private void ApplyAnsiStyleToInline(Inline inline, AnsiStyle style)
+        {
+            if (inline == null || style == null) return;
+
+            if (inline is Run run)
+            {
+                if (style.Bold)
+                    run.FontWeight = Windows.UI.Text.FontWeights.Bold;
+                if (style.Italic)
+                    run.FontStyle = Windows.UI.Text.FontStyle.Italic;
+#if UWP1709                
+                if (style.Underline)
+                    run.TextDecorations |= Windows.UI.Text.TextDecorations.Underline;
+                if (style.Strikethrough)
+                    run.TextDecorations |= Windows.UI.Text.TextDecorations.Strikethrough;
+#endif
+                if (style.Foreground.HasValue)
+                    run.Foreground = new SolidColorBrush(style.Foreground.Value);
+            }
+            else if (inline is Hyperlink link)
+            {
+                if (style.Foreground.HasValue)
+                    link.Foreground = new SolidColorBrush(style.Foreground.Value);
+            }
         }
 
         // Navigation
@@ -83,10 +207,10 @@ namespace Universal_Pumpkin.Shared.Views
             _vm.OnNavigatedTo();
             UpdateInfoBarForNotRunning();
             UpdateUiState();
-            
+
             if (LogList != null)
             {
-                LogList.ItemsSource = _visibleLogItems;
+                LogList.ItemsSource = _vm.VisibleLogs;
                 LogList.Loaded += LogList_Loaded;
                 TryHookScrollEvent();
             }
@@ -95,11 +219,12 @@ namespace Universal_Pumpkin.Shared.Views
             await _vm.LoadInitialLogAsync();
             if (_cachedLoadingSpinner != null) _cachedLoadingSpinner.Visibility = Visibility.Collapsed;
 
-            ApplyFilter();
+            _vm.ApplyFilter();
+            ScrollToBottomIfNeeded();
 
-            if (_autoScroll && _visibleLogItems.Count > 0)
+            if (_autoScroll && _vm.VisibleLogs.Count > 0)
             {
-                LogList.ScrollIntoView(_visibleLogItems[_visibleLogItems.Count - 1]);
+                LogList.ScrollIntoView(_vm.VisibleLogs[_vm.VisibleLogs.Count - 1]);
             }
         }
 
@@ -111,6 +236,12 @@ namespace Universal_Pumpkin.Shared.Views
         }
 
         // VM Event Handlers
+        private void Vm_LogReceived(object sender, LogEntry entry)
+        {
+            _vm.EnqueueLog(entry);
+            ScrollToBottomIfNeeded();
+        }
+
         private async void Vm_MetricsUpdated(object sender, EventArgs e)
         {
             await RunOnUI(CoreDispatcherPriority.Normal, () =>
@@ -125,6 +256,36 @@ namespace Universal_Pumpkin.Shared.Views
                         ? new SolidColorBrush(Windows.UI.Colors.LightGreen)
                         : new SolidColorBrush(Windows.UI.Colors.OrangeRed);
                 }
+            });
+        }
+
+        private async void Vm_ServerStopped(object sender, int code)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                StatusGrid.Visibility = Visibility.Collapsed;
+                BtnStop.Visibility = Visibility.Collapsed;
+                BtnStart.Visibility = Visibility.Collapsed;
+                BtnRestartApp.Visibility = Visibility.Visible;
+
+                BoxCommand.IsEnabled = false;
+                BtnSend.IsEnabled = false;
+
+                OnServerStoppedUI(code);
+
+                var systemEntry = new LogEntry
+                {
+                    Timestamp = DateTime.Now,
+                    Level = "INFO",
+                    Message = "[System] Server stopped. Please restart the app to run again."
+                };
+                _vm.EnqueueLog(systemEntry);
+
+                _vm.ApplyFilter();
+                ScrollToBottomIfNeeded();
+
+                if (LogList.Items.Count > 0)
+                    LogList.ScrollIntoView(LogList.Items[LogList.Items.Count - 1]);
             });
         }
 
@@ -149,62 +310,6 @@ namespace Universal_Pumpkin.Shared.Views
             }
         }
 
-        private async void Vm_LogReceived(object sender, LogEntry entry)
-        {
-            await RunOnUI(CoreDispatcherPriority.Low, async () =>
-            {
-                _vm.LogItems.Add(entry);
-
-                bool passesFilter = _enabledFilters.Contains(entry.Level);
-
-                if (passesFilter && _cachedSearchBox != null && !string.IsNullOrEmpty(_cachedSearchBox.Text))
-                {
-                    var query = _cachedSearchBox.Text.Trim();
-                    passesFilter = entry.Message.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                   entry.Level.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
-                }
-
-                if (passesFilter)
-                {
-                    _visibleLogItems.Add(entry);
-
-                    if (_autoScroll && _cachedScrollViewer != null)
-                    {
-                        await Task.Delay(1);
-                        _cachedScrollViewer.ChangeView(null, _cachedScrollViewer.ScrollableHeight, null, true);
-                    }
-                }
-            });
-        }
-
-        private async void Vm_ServerStopped(object sender, int code)
-        {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-            {
-                StatusGrid.Visibility = Visibility.Collapsed;
-                BtnStop.Visibility = Visibility.Collapsed;
-                BtnStart.Visibility = Visibility.Collapsed;
-                BtnRestartApp.Visibility = Visibility.Visible;
-
-                BoxCommand.IsEnabled = false;
-                BtnSend.IsEnabled = false;
-
-                OnServerStoppedUI(code);
-
-                _vm.LogItems.Add(new LogEntry
-                {
-                    Timestamp = DateTime.Now,
-                    Level = "INFO",
-                    Message = "[System] Server stopped. Please restart the app to run again."
-                });
-
-                ApplyFilter();
-
-                if (LogList.Items.Count > 0)
-                    LogList.ScrollIntoView(LogList.Items[LogList.Items.Count - 1]);
-            });
-        }
-
         // Abstract UI Hooks
         protected abstract void UpdateUiState();
         protected abstract void UpdateInfoBarForNotRunning();
@@ -221,8 +326,10 @@ namespace Universal_Pumpkin.Shared.Views
                 await _vm.StartServerAsync();
                 UpdateUiState();
 
-                _vm.LogItems.Clear();
-                ApplyFilter();
+                _vm.AllLogs.Clear();
+                _vm.VisibleLogs.Clear();
+                _vm.ApplyFilter();
+                ScrollToBottomIfNeeded();
 
                 TxtIpAddress.Text = _vm.LocalIpAddress;
                 StatusGrid.Visibility = Visibility.Visible;
@@ -363,15 +470,14 @@ namespace Universal_Pumpkin.Shared.Views
             }
             _historyIndex = -1;
 
-            _vm.SendCommand(command);
+            _vm.SendCommand(NormalizeMcCommand(command));
 
             sender.Text = "";
             _cachedGhostText.Text = "";
             _currentPrediction = "";
             sender.Focus(FocusState.Programmatic);
 
-            ResumeAutoScroll();
-
+            await ResumeAutoScroll();
         }
 
         protected void BoxCommand_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
@@ -402,13 +508,12 @@ namespace Universal_Pumpkin.Shared.Views
 
         protected void BtnSend_Click(object sender, RoutedEventArgs e)
         {
-            _vm.SendCommand(BoxCommand.Text);
+            _vm.SendCommand(NormalizeMcCommand(BoxCommand.Text));
             BoxCommand.Text = "";
             BoxCommand.Focus(FocusState.Programmatic);
         }
 
         // Auto Scroll
-        private bool isAtBottom;
 
         private void TryHookScrollEvent()
         {
@@ -485,7 +590,27 @@ namespace Universal_Pumpkin.Shared.Views
         {
             ResumeAutoScroll();
         }
-        
+
+        private async void ScrollToBottomIfNeeded()
+        {
+            if (!_autoScroll || _cachedScrollViewer == null)
+                return;
+
+            try
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Low, () =>
+                {
+                    _cachedScrollViewer.ChangeView(
+                        null,
+                        _cachedScrollViewer.ScrollableHeight,
+                        null,
+                        true
+                    );
+                });
+            }
+            catch { }
+        }
+
         // Search + Filtering
         protected void Search_Click(object sender, RoutedEventArgs e)
         {
@@ -493,7 +618,9 @@ namespace Universal_Pumpkin.Shared.Views
             {
                 SearchBox.Visibility = Visibility.Collapsed;
                 SearchBox.Text = "";
-                ApplyFilter();
+                _vm.CurrentSearchQuery = "";
+                _vm.ApplyFilter();
+                ScrollToBottomIfNeeded();
             }
             else
             {
@@ -505,43 +632,9 @@ namespace Universal_Pumpkin.Shared.Views
         protected void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             var query = SearchBox.Text.Trim();
-
-            if (string.IsNullOrEmpty(query))
-            {
-                ApplyFilter();
-                return;
-            }
-
-            LogList.ItemsSource = _vm.LogItems
-                .Where(x => x.Message.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0
-                         || x.Level.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
-                .Where(x => _enabledFilters.Contains(x.Level))
-                .ToList();
-        }
-
-        protected void ApplyFilter()
-        {
-            if (LogList == null) return;
-
-            var query = SearchBox?.Text?.Trim();
-            var filtered = _vm.LogItems.Where(x => _enabledFilters.Contains(x.Level));
-
-            if (!string.IsNullOrEmpty(query))
-            {
-                filtered = filtered.Where(x => x.Message.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0
-                                           || x.Level.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0);
-            }
-
-            _visibleLogItems.Clear();
-            foreach (var item in filtered)
-            {
-                _visibleLogItems.Add(item);
-            }
-
-            if (_autoScroll && _cachedScrollViewer != null)
-            {
-                _cachedScrollViewer.ChangeView(null, _cachedScrollViewer.ScrollableHeight, null, true);
-            }
+            _vm.CurrentSearchQuery = query;
+            _vm.ApplyFilter();
+            ScrollToBottomIfNeeded();
         }
 
         // Selection (Context Menu)
@@ -698,9 +791,10 @@ namespace Universal_Pumpkin.Shared.Views
         {
             var selected = LogList.SelectedItems.Cast<LogEntry>().ToList();
             foreach (var entry in selected)
-                _vm.LogItems.Remove(entry);
-
-            ApplyFilter();
+            {
+                _vm.AllLogs.Remove(entry);
+                _vm.VisibleLogs.Remove(entry);
+            }
         }
 
         private ToggleMenuFlyoutItem CreateFilterItem(string level)
@@ -709,7 +803,7 @@ namespace Universal_Pumpkin.Shared.Views
             {
                 Text = level,
                 Tag = level,
-                IsChecked = _enabledFilters.Contains(level)
+                IsChecked = _vm.EnabledLevels.Contains(level)
             };
             item.Click += FilterMenu_Click;
             return item;
@@ -720,11 +814,12 @@ namespace Universal_Pumpkin.Shared.Views
             if (sender is ToggleMenuFlyoutItem item && item.Tag is string level)
             {
                 if (item.IsChecked)
-                    _enabledFilters.Add(level);
+                    _vm.EnabledLevels.Add(level);
                 else
-                    _enabledFilters.Remove(level);
+                    _vm.EnabledLevels.Remove(level);
 
-                ApplyFilter();
+                _vm.ApplyFilter();
+                ScrollToBottomIfNeeded();
             }
         }
 
