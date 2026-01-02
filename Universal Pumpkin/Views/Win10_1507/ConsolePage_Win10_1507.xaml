@@ -179,7 +179,7 @@
                  Grid.Row="1"
                  PlaceholderText="Search logs..."
                  Visibility="Collapsed"
-                 Margin="15,5"
+                 Margin="15,15,15,0"
                  TextChanged="SearchBox_TextChanged"/>
 
         <Grid Grid.Row="2"

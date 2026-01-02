@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Universal_Pumpkin.Services;
 using Windows.ApplicationModel.Background;
 using Windows.ApplicationModel.ExtendedExecution;
 using Windows.Foundation.Metadata;
@@ -90,7 +91,17 @@ namespace Universal_Pumpkin.Helpers
         
         public static async Task OpenBackgroundSettings()
         {
-            await Launcher.LaunchUriAsync(new Uri("ms-settings:privacy-backgroundapps"));
+            if (OSHelper.IsWindows11)
+            {
+                string pfn = Windows.ApplicationModel.Package.Current.Id.FamilyName;
+                var uri = new Uri($"ms-settings:appsfeatures-app?{pfn}");
+                _ = Windows.System.Launcher.LaunchUriAsync(uri);
+            }
+            else
+            {
+                var uri = new Uri("ms-settings:privacy-backgroundapps");
+                _ = Windows.System.Launcher.LaunchUriAsync(uri);
+            }
         }
     }
 }
