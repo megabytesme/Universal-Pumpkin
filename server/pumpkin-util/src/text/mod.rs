@@ -1,7 +1,5 @@
 use crate::text::color::ARGBColor;
-use crate::translation::{
-    Locale, get_translation, get_translation_text, reorder_substitutions, translation_to_pretty,
-};
+use crate::translation::{Locale, get_translation, get_translation_text, reorder_substitutions};
 use click::ClickEvent;
 use color::Color;
 use colored::Colorize;
@@ -69,7 +67,7 @@ impl<'de> Deserialize<'de> for TextComponent {
 
 impl Serialize for TextComponent {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_newtype_struct("TextComponent", &self.0.clone().to_translated())
+        serializer.serialize_newtype_struct("TextComponent", &self.0.to_translated())
     }
 }
 
@@ -80,7 +78,7 @@ pub struct TextComponentBase {
     #[serde(flatten)]
     pub content: TextContent,
     /// Style of the text. Bold, Italic, underline, Color...
-    /// Also has `ClickEvent
+    /// Also has `ClickEvent`
     #[serde(flatten)]
     pub style: Box<Style>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -89,153 +87,265 @@ pub struct TextComponentBase {
 }
 
 impl TextComponentBase {
-    pub fn to_pretty_console(self) -> String {
-        let mut text = match self.content {
-            TextContent::Text { text } => text.into_owned(),
-            TextContent::Translate { translate, with } => {
-                translation_to_pretty(format!("minecraft:{translate}"), Locale::EnUs, with)
+    /// Convert a full TextComponent tree into ANSI + OSC‑8 console output
+    pub fn to_pretty_console(&self) -> String {
+        let mut out = String::new();
+        Self::render_component(self, &mut out, &Style::default());
+        out
+    }
+
+    fn render_component(component: &TextComponentBase, out: &mut String, parent_style: &Style) {
+        let merged = parent_style.merge(&component.style);
+
+        let mut rendered = match &component.content {
+            TextContent::Text { text } => text.to_string(),
+
+            TextContent::Translate { translate, with } => get_translation_text(
+                format!("minecraft:{translate}"),
+                Locale::EnUs,
+                with.to_vec(),
+            ),
+
+            TextContent::EntityNames { selector, .. } => selector.to_string(),
+
+            TextContent::Keybind { keybind } => keybind.to_string(),
+
+            TextContent::Custom { key, with, .. } => {
+                get_translation_text(key.to_string(), Locale::EnUs, with.to_vec())
             }
-            TextContent::EntityNames {
-                selector,
-                separator: _,
-            } => selector.into_owned(),
-            TextContent::Keybind { keybind } => keybind.into_owned(),
-            TextContent::Custom { key, with, .. } => translation_to_pretty(key, Locale::EnUs, with),
         };
-        let style = self.style;
-        let color = style.color;
-        if let Some(color) = color {
-            text = color.console_color(&text).to_string();
-        }
-        if style.bold.is_some() {
-            text = text.bold().to_string();
-        }
-        if style.italic.is_some() {
-            text = text.italic().to_string();
-        }
-        if style.underlined.is_some() {
-            text = text.underline().to_string();
-        }
-        if style.strikethrough.is_some() {
-            text = text.strikethrough().to_string();
-        }
-        for child in self.extra {
-            text += &*child.to_pretty_console();
-        }
-        text
-    }
 
-    pub fn get_text(self, locale: Locale) -> String {
-        match self.content {
-            TextContent::Text { text } => text.into_owned(),
-            TextContent::Translate { translate, with } => {
-                get_translation_text(format!("minecraft:{translate}"), locale, with)
+        rendered = merged.apply_ansi(&rendered);
+
+        if let Some(click) = &merged.click_event {
+            rendered = wrap_click_event_osc8(click, &rendered);
+        }
+
+        if let Some(hover) = &merged.hover_event {
+            rendered = wrap_hover_event_osc8(hover, &rendered);
+        }
+
+        out.push_str(&rendered);
+
+        for (i, child) in component.extra.iter().enumerate() {
+            if i > 0 {
+                out.push('\n');
             }
-            TextContent::EntityNames {
-                selector,
-                separator: _,
-            } => selector.into_owned(),
-            TextContent::Keybind { keybind } => keybind.into_owned(),
-            TextContent::Custom { key, with, .. } => get_translation_text(key, locale, with),
+
+            Self::render_component(child, out, &merged);
         }
     }
 
-    pub fn to_translated(self) -> Self {
+    pub fn get_text(&self, locale: Locale) -> String {
+        match &self.content {
+            TextContent::Text { text } => text.to_string(),
+
+            TextContent::Translate { translate, with } => {
+                get_translation_text(format!("minecraft:{translate}"), locale, with.clone())
+            }
+
+            TextContent::EntityNames { selector, .. } => selector.to_string(),
+
+            TextContent::Keybind { keybind } => keybind.to_string(),
+
+            TextContent::Custom { key, with, .. } => {
+                get_translation_text(key.clone(), locale, with.clone())
+            }
+        }
+    }
+
+    pub fn to_translated(&self) -> Self {
         // Divide the translation into slices and inserts the substitutions
-        let component = match self.content {
+        let component = match &self.content {
             TextContent::Custom { key, with, locale } => {
-                let translation = get_translation(&key, locale);
+                let translation = get_translation(key, *locale);
                 let mut translation_parent = translation.clone();
                 let mut translation_slices = vec![];
 
                 if translation.contains('%') {
-                    let (substitutions, ranges) = reorder_substitutions(&translation, with);
+                    let (substitutions, ranges) = reorder_substitutions(&translation, with.clone());
+
                     for (idx, &range) in ranges.iter().enumerate() {
                         if idx == 0 {
                             translation_parent = translation[..range.start].to_string();
-                        };
-                        translation_slices.push(substitutions[idx].clone());
-                        if range.end >= translation.len() - 1 {
-                            continue;
                         }
 
-                        translation_slices.push(TextComponentBase {
-                            content: TextContent::Text {
-                                text: if idx == ranges.len() - 1 {
-                                    // Last substitution, append the rest of the translation
-                                    Cow::Owned(translation[range.end + 1..].to_string())
-                                } else {
-                                    Cow::Owned(
-                                        translation[range.end + 1..ranges[idx + 1].start]
-                                            .to_string(),
-                                    )
+                        translation_slices.push(substitutions[idx].clone());
+
+                        if range.end < translation.len() - 1 {
+                            let next = if idx == ranges.len() - 1 {
+                                &translation[range.end + 1..]
+                            } else {
+                                &translation[range.end + 1..ranges[idx + 1].start]
+                            };
+
+                            translation_slices.push(TextComponentBase {
+                                content: TextContent::Text {
+                                    text: Cow::Owned(next.to_string()),
                                 },
-                            },
-                            style: Box::new(Style::default()),
-                            extra: vec![],
-                        });
+                                style: Box::new(Style::default()),
+                                extra: vec![],
+                            });
+                        }
                     }
                 }
-                for i in self.extra {
-                    translation_slices.push(i);
+
+                for extra in &self.extra {
+                    translation_slices.push(extra.clone());
                 }
+
                 TextComponentBase {
                     content: TextContent::Text {
                         text: translation_parent.into(),
                     },
-                    style: self.style,
+                    style: self.style.clone(),
                     extra: translation_slices,
                 }
             }
-            _ => self, // If not a translation, return as is
+
+            _ => self.clone(),
         };
-        // Ensure that the extra components are translated
-        let mut extra = vec![];
-        for extra_component in component.extra {
-            let translated = extra_component.to_translated();
-            extra.push(translated);
-        }
-        // If the hover event is present, it will also be translated
-        let style = match component.style.hover_event {
-            None => component.style,
-            Some(ref hover) => {
+
+        let extra = component
+            .extra
+            .iter()
+            .map(|c| c.to_translated())
+            .collect::<Vec<_>>();
+
+        let style = match &component.style.hover_event {
+            None => component.style.clone(),
+
+            Some(hover) => {
                 let mut style = component.style.clone();
+
                 style.hover_event = match hover {
-                    HoverEvent::ShowText { value } => {
-                        let mut hover_components = vec![];
-                        for hover_component in value {
-                            hover_components.push(hover_component.to_owned().to_translated());
-                        }
-                        Some(HoverEvent::ShowText {
-                            value: hover_components,
-                        })
-                    }
-                    HoverEvent::ShowEntity { name, id, uuid } => match name {
-                        None => Some(HoverEvent::ShowEntity {
-                            name: None,
-                            id: id.clone(),
-                            uuid: uuid.clone(),
-                        }),
-                        Some(name) => Some(HoverEvent::ShowEntity {
-                            name: Some(name.iter().map(|x| x.to_owned().to_translated()).collect()),
-                            id: id.clone(),
-                            uuid: uuid.clone(),
-                        }),
-                    },
+                    HoverEvent::ShowText { value } => Some(HoverEvent::ShowText {
+                        value: value.iter().map(|v| v.to_translated()).collect(),
+                    }),
+
+                    HoverEvent::ShowEntity { name, id, uuid } => Some(HoverEvent::ShowEntity {
+                        name: name
+                            .as_ref()
+                            .map(|n| n.iter().map(|v| v.to_translated()).collect()),
+                        id: id.clone(),
+                        uuid: uuid.clone(),
+                    }),
+
                     HoverEvent::ShowItem { id, count } => Some(HoverEvent::ShowItem {
                         id: id.clone(),
-                        count: count.to_owned(),
+                        count: *count,
                     }),
                 };
+
                 style
             }
         };
+
         TextComponentBase {
-            content: component.content,
+            content: component.content.clone(),
             style,
             extra,
         }
     }
+}
+
+impl Style {
+    pub fn merge(&self, child: &Style) -> Style {
+        Style {
+            color: child.color.or(self.color),
+            bold: child.bold.or(self.bold),
+            italic: child.italic.or(self.italic),
+            underlined: child.underlined.or(self.underlined),
+            strikethrough: child.strikethrough.or(self.strikethrough),
+            obfuscated: child.obfuscated.or(self.obfuscated),
+            insertion: child.insertion.clone().or(self.insertion.clone()),
+            click_event: child.click_event.clone().or(self.click_event.clone()),
+            hover_event: child.hover_event.clone().or(self.hover_event.clone()),
+            font: child.font.clone().or(self.font.clone()),
+            shadow_color: child.shadow_color.or(self.shadow_color),
+        }
+    }
+
+    pub fn apply_ansi(&self, text: &str) -> String {
+        let mut out = text.to_string();
+
+        if let Some(color) = self.color {
+            out = color.console_color(&out).to_string();
+        }
+        if self.bold == Some(true) {
+            out = out.bold().to_string();
+        }
+        if self.italic == Some(true) {
+            out = out.italic().to_string();
+        }
+        if self.underlined == Some(true) {
+            out = out.underline().to_string();
+        }
+        if self.strikethrough == Some(true) {
+            out = out.strikethrough().to_string();
+        }
+        if self.obfuscated == Some(true) {
+            out = obfuscate_text(&out);
+        }
+        if self.shadow_color.is_some() {
+            out = format!("\x1B[2m{out}\x1B[22m"); // dim
+        }
+
+        out
+    }
+}
+
+fn wrap_click_event_osc8(click: &ClickEvent, visible_text: &str) -> String {
+    let target = match click {
+        ClickEvent::OpenUrl { url } => url.to_string(),
+        ClickEvent::OpenFile { path } => format!("file://{}", path),
+        ClickEvent::RunCommand { command } => format!("mc:run_command:{}", command),
+        ClickEvent::SuggestCommand { command } => format!("mc:suggest_command:{}", command),
+        ClickEvent::ChangePage { page } => format!("mc:change_page:{}", page),
+        ClickEvent::CopyToClipboard { value } => format!("mc:copy_to_clipboard:{}", value),
+    };
+
+    format!("\x1B]8;;{target}\x1B\\{visible_text}\x1B]8;;\x1B\\")
+}
+
+fn wrap_hover_event_osc8(hover: &HoverEvent, visible_text: &str) -> String {
+    let tooltip = match hover {
+        HoverEvent::ShowText { value } => value
+            .iter()
+            .map(|v| v.to_pretty_console())
+            .collect::<String>(),
+
+        HoverEvent::ShowItem { id, count } => {
+            let count_str = count
+                .map(|c| c.to_string())
+                .unwrap_or_else(|| "?".to_string());
+            format!("Item: {id} x{count_str}")
+        }
+
+        HoverEvent::ShowEntity { id, name, .. } => {
+            let name_str = name
+                .as_ref()
+                .map(|n| n.iter().map(|x| x.to_pretty_console()).collect::<String>())
+                .unwrap_or_default();
+            format!("Entity: {id} {name_str}")
+        }
+    };
+
+    format!("\x1B]8;;tooltip:{tooltip}\x1B\\{visible_text}\x1B]8;;\x1B\\")
+}
+
+fn obfuscate_text(text: &str) -> String {
+    use rand::{Rng, rng};
+    let mut rng = rng();
+    text.chars()
+        .map(|c| {
+            if c.is_whitespace() {
+                c
+            } else {
+                rng.random_range('a'..'z')
+            }
+        })
+        .collect()
 }
 
 impl TextComponent {
@@ -309,7 +419,7 @@ impl TextComponent {
     pub fn chat_decorated(format: String, player_name: String, content: String) -> Self {
         // Todo: maybe allow players to use & in chat contingent on permissions
         let with_resolved_fields = format
-            .replace("&", "§")
+            .replace('&', "§")
             .replace("{DISPLAYNAME}", player_name.as_str())
             .replace("{MESSAGE}", content.as_str());
 

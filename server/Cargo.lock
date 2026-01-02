@@ -2494,6 +2494,7 @@ dependencies = [
  "proc-macro2",
  "pumpkin-nbt",
  "quote",
+ "rand 0.10.0-rc.5",
  "serde",
  "serde_json",
  "syn",

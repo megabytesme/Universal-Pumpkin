@@ -1,4 +1,3 @@
-use log::{Metadata, Record};
 use pumpkin::PumpkinServer;
 use pumpkin::command::CommandSender;
 use pumpkin::entity::player::Player;
@@ -9,8 +8,7 @@ use pumpkin_protocol::java::client::play::CommandSuggestion;
 use serde::Serialize;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
-use std::sync::atomic::AtomicPtr;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicPtr, Ordering};
 use std::sync::{Arc, OnceLock};
 use tokio::runtime::Runtime;
 
@@ -113,39 +111,16 @@ struct SerializedMetrics {
 //  LOGGING BRIDGE
 type LogCallback = extern "C" fn(*const c_char);
 
-struct UwpLogger;
-
-impl UwpLogger {
-    fn send_to_csharp(msg: &str) {
-        let ptr = LOG_CALLBACK.load(Ordering::Relaxed);
-        if !ptr.is_null() {
-            if let Ok(c_str) = CString::new(msg) {
-                unsafe {
-                    let cb: LogCallback = std::mem::transmute(ptr);
-                    cb(c_str.as_ptr());
-                }
+fn send_to_csharp(msg: &str) {
+    let ptr = LOG_CALLBACK.load(Ordering::Relaxed);
+    if !ptr.is_null() {
+        if let Ok(c_str) = CString::new(msg) {
+            unsafe {
+                let cb: LogCallback = std::mem::transmute(ptr);
+                cb(c_str.as_ptr());
             }
         }
     }
-}
-
-impl log::Log for UwpLogger {
-    fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= log::Level::Info
-    }
-
-    fn log(&self, record: &Record) {
-        if self.enabled(record.metadata()) {
-            let msg = format!(
-                "[{}] [{}] {}",
-                record.level(),
-                record.target(),
-                record.args()
-            );
-            Self::send_to_csharp(&msg);
-        }
-    }
-    fn flush(&self) {}
 }
 
 fn uwp_init_panic_hook() {
@@ -168,17 +143,15 @@ fn uwp_init_panic_hook() {
             msg
         );
         log::error!("{}", err_msg);
-        UwpLogger::send_to_csharp(&err_msg);
+        send_to_csharp(&err_msg);
     }));
 }
 
-static LOG_CALLBACK_RAW: std::sync::atomic::AtomicPtr<()> =
-    std::sync::atomic::AtomicPtr::new(std::ptr::null_mut());
-
 //  FFI EXPORTS
+
 #[unsafe(no_mangle)]
 pub extern "C" fn pumpkin_register_logger(cb: LogCallback) {
-    LOG_CALLBACK_RAW.store(cb as *mut (), Ordering::Relaxed);
+    LOG_CALLBACK.store(cb as *mut (), Ordering::Relaxed);
     uwp_init_panic_hook();
 }
 
@@ -233,12 +206,12 @@ pub extern "C" fn pumpkin_get_metrics_json() -> *mut c_char {
         let metrics = SerializedMetrics {
             tps: tps as f32,
             mspt: mspt as f32,
-            tick_count,
+            tick_count: tick_count as i32,
             loaded_chunks,
             player_count,
         };
 
-        let json = serde_json::to_string(&metrics).unwrap_or("{}".to_string());
+        let json = serde_json::to_string(&metrics).unwrap_or_else(|_| "{}".to_string());
         return CString::new(json).unwrap().into_raw();
     }
     CString::new("{}").unwrap().into_raw()
@@ -277,7 +250,6 @@ pub extern "C" fn pumpkin_get_completions_json(input_utf8: *const c_char) -> *mu
                 }
 
                 let src = CommandSender::Console;
-
                 let query = if full_input.ends_with(' ') {
                     full_input.clone()
                 } else {
@@ -295,7 +267,7 @@ pub extern "C" fn pumpkin_get_completions_json(input_utf8: *const c_char) -> *mu
                 })
                 .collect();
 
-            let json = serde_json::to_string(&results).unwrap_or("[]".to_string());
+            let json = serde_json::to_string(&results).unwrap_or_else(|_| "[]".to_string());
             return CString::new(json).unwrap().into_raw();
         }
     }
@@ -353,7 +325,7 @@ pub extern "C" fn pumpkin_run_from_config_dir(config_dir_utf8: *const c_char) ->
         let basic_config = pumpkin_config::BasicConfiguration::load(&config_dir);
         let advanced_config = pumpkin_config::AdvancedConfiguration::load(&config_dir);
 
-        let cb_ptr = LOG_CALLBACK_RAW.load(Ordering::Relaxed);
+        let cb_ptr = LOG_CALLBACK.load(Ordering::Relaxed);
         let callback = if !cb_ptr.is_null() {
             Some(std::mem::transmute::<
                 *mut (),
@@ -362,6 +334,7 @@ pub extern "C" fn pumpkin_run_from_config_dir(config_dir_utf8: *const c_char) ->
         } else {
             None
         };
+
         pumpkin::init_logger(&advanced_config, &config_dir, callback);
 
         log::info!(
