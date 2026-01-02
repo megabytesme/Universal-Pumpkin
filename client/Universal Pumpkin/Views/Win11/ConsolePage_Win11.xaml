@@ -24,21 +24,26 @@
                         IsRightTapEnabled="True"
                         Holding="LogItem_Holding"
                         RightTapped="LogItem_RightTapped">
+
                 <TextBlock Text="{x:Bind Timestamp, Converter={StaticResource TimeFormatConverter}}"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                            Margin="0,0,8,0"
                            FontFamily="Consolas"/>
+
                 <TextBlock FontFamily="Consolas"
                            FontWeight="Bold"
                            Margin="0,0,8,0">
-                    <Run Text="{x:Bind Level}"/>
+                <Run Text="{x:Bind Level}"/>
                 </TextBlock>
-                <TextBlock Text="{x:Bind Message}"
-                           TextWrapping="WrapWholeWords"
+
+                <TextBlock TextWrapping="WrapWholeWords"
                            FontFamily="Consolas"
-                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                           helpers:InlineHelper.RichText="{Binding RenderKey}"/>
+
             </StackPanel>
         </DataTemplate>
+
 
         <DataTemplate x:Key="WarnTemplate"
                       x:DataType="models:LogEntry">
@@ -56,12 +61,12 @@
                            FontWeight="Bold"
                            Foreground="Yellow"
                            Margin="0,0,8,0">
-                    <Run Text="{x:Bind Level}"/>
+                <Run Text="{x:Bind Level}"/>
                 </TextBlock>
-                <TextBlock Text="{x:Bind Message}"
-                           TextWrapping="WrapWholeWords"
+                <TextBlock TextWrapping="WrapWholeWords"
                            FontFamily="Consolas"
-                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                           helpers:InlineHelper.RichText="{Binding RenderKey}"/>
             </StackPanel>
         </DataTemplate>
 
@@ -81,12 +86,12 @@
                            FontWeight="Bold"
                            Foreground="OrangeRed"
                            Margin="0,0,8,0">
-                    <Run Text="{x:Bind Level}"/>
+                <Run Text="{x:Bind Level}"/>
                 </TextBlock>
-                <TextBlock Text="{x:Bind Message}"
-                           TextWrapping="WrapWholeWords"
+                <TextBlock TextWrapping="WrapWholeWords"
                            FontFamily="Consolas"
-                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
+                           Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                           helpers:InlineHelper.RichText="{Binding RenderKey}"/>
             </StackPanel>
         </DataTemplate>
 
@@ -223,7 +228,7 @@
               Holding="LogBackground_Holding">
 
             <ListView x:Name="LogList"
-                      ItemsSource="{x:Bind _vm.LogItems}"
+                      ItemsSource="{x:Bind _vm.VisibleLogs}"
                       ItemTemplateSelector="{StaticResource LogSelector}"
                       SelectionMode="Extended"
                       IsItemClickEnabled="False"
