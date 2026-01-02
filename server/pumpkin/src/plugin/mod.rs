@@ -285,17 +285,24 @@ impl PluginManager {
 
     /// Load all plugins from the plugin directory
     pub async fn load_plugins(&self) -> Result<(), ManagerError> {
-        const PLUGIN_DIR: &str = "./plugins";
-        let path = Path::new(PLUGIN_DIR);
+        let root = self
+            .server
+            .read()
+            .await
+            .as_ref()
+            .expect("Server not initialized")
+            .config_dir
+            .clone();
 
-        if !path.exists() {
-            std::fs::create_dir(path)?;
-            return Ok(());
+        let plugin_dir = root.join("plugins");
+
+        if !plugin_dir.exists() {
+            std::fs::create_dir_all(&plugin_dir)?;
         }
 
         let mut load_tasks = Vec::new();
 
-        for entry in std::fs::read_dir(path)? {
+        for entry in std::fs::read_dir(&plugin_dir)? {
             let entry = entry?;
             let path = entry.path();
 

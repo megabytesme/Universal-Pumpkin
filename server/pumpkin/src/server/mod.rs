@@ -57,6 +57,7 @@ use super::command::args::entities::{
 pub struct Server {
     pub basic_config: BasicConfiguration,
     pub advanced_config: AdvancedConfiguration,
+    pub config_dir: std::path::PathBuf,
 
     /// Handles cryptographic keys for secure communication.
     key_store: KeyStore,
@@ -187,6 +188,7 @@ impl Server {
         let server = Self {
             basic_config,
             advanced_config,
+            config_dir: probe_root.to_path_buf(),
 
             cached_registry: Registry::get_synced(),
             container_id: 0.into(),
