@@ -326,7 +326,7 @@ impl Log for CallbackLogger {
 
     fn log(&self, record: &Record) {
         if self.enabled(record.metadata()) {
-            let msg = format!("{}", record.args());
+            let msg = format!("[{}] {}", record.level(), record.args());
 
             if let Ok(c_str) = std::ffi::CString::new(msg) {
                 unsafe {
