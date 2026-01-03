@@ -9,7 +9,11 @@ use pumpkin_protocol::{
     java::client::{config::CPluginMessage, status::CStatusResponse},
 };
 use pumpkin_world::CURRENT_MC_VERSION;
-use std::{fs::File, io::Read, path::Path};
+use std::{
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+};
 
 const DEFAULT_ICON: &[u8] = include_bytes!("../../../assets/default_icon.png");
 
@@ -32,6 +36,7 @@ pub struct CachedStatus {
     // We cache the json response here so we don't parse it every time someone makes a status request.
     // Keep in mind that we must parse this again when the StatusResponse changes, which usually happen when a player joins or leaves.
     status_response_json: String,
+    pub config_dir: PathBuf,
 }
 
 pub struct CachedBranding {
@@ -62,14 +67,15 @@ impl<'a> CachedBranding {
 
 impl CachedStatus {
     #[must_use]
-    pub fn new(config: &BasicConfiguration) -> Self {
-        let status_response = Self::build_response(config);
+    pub fn new(config: &BasicConfiguration, config_dir: PathBuf) -> Self {
+        let status_response = Self::build_response(config, &config_dir);
         let status_response_json = serde_json::to_string(&status_response)
             .expect("Failed to parse status response into JSON");
 
         Self {
             status_response,
             status_response_json,
+            config_dir,
         }
     }
 
@@ -114,12 +120,16 @@ impl CachedStatus {
             .expect("Failed to parse status response into JSON");
     }
 
-    pub fn build_response(config: &BasicConfiguration) -> StatusResponse {
+    pub fn build_response(config: &BasicConfiguration, config_dir: &Path) -> StatusResponse {
         let favicon = if config.use_favicon {
-            let icon_path = &config.favicon_path;
-            log::debug!("Attempting to load server favicon from '{icon_path}'");
+            let full_path = config_dir.join(&config.favicon_path);
 
-            match load_icon_from_file(icon_path) {
+            log::debug!(
+                "Attempting to load server favicon from '{}'",
+                full_path.display()
+            );
+
+            match load_icon_from_file(&full_path) {
                 Ok(icon) => Some(icon),
                 Err(e) => {
                     let error_message = e.downcast_ref::<std::io::Error>().map_or_else(
@@ -132,7 +142,11 @@ impl CachedStatus {
                             }
                         },
                     );
-                    log::warn!("Failed to load favicon from '{icon_path}': {error_message}");
+                    log::warn!(
+                        "Failed to load favicon from '{}': {}",
+                        full_path.display(),
+                        error_message
+                    );
 
                     // Attempt to load default icon
                     Some(load_icon_from_bytes(DEFAULT_ICON))
@@ -164,6 +178,6 @@ impl CachedStatus {
 
 impl Default for CachedStatus {
     fn default() -> Self {
-        Self::new(&BasicConfiguration::default())
+        Self::new(&BasicConfiguration::default(), PathBuf::new())
     }
 }

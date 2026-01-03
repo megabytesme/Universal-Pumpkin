@@ -124,11 +124,7 @@ impl Server {
         // UWP SHIM: Rebase world path
         // We ignore the config's raw relative path and force it to be absolute inside LocalState.
         let raw_path = basic_config.get_world_path();
-        let world_path = if raw_path.is_relative() {
-            probe_root.join(&raw_path)
-        } else {
-            raw_path
-        };
+        let world_path = probe_root.join(raw_path);
 
         let block_registry = super::block::registry::default_registry();
 
@@ -172,7 +168,7 @@ impl Server {
         let seed = level_info.world_gen_settings.seed;
         let level_info = Arc::new(RwLock::new(level_info));
 
-        let listing = Mutex::new(CachedStatus::new(&basic_config));
+        let listing = Mutex::new(CachedStatus::new(&basic_config, probe_root.to_path_buf()));
         let defaultgamemode = Mutex::new(DefaultGamemode {
             gamemode: basic_config.default_gamemode,
         });
