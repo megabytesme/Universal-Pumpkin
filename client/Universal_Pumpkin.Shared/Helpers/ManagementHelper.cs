@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using Newtonsoft.Json;
 using Universal_Pumpkin.Models;
+using Windows.UI.Xaml;
 
 namespace Universal_Pumpkin
 {
@@ -11,12 +12,19 @@ namespace Universal_Pumpkin
     {
         private const string DataFolder = "data";
 
+        private static async Task<StorageFolder> GetDataFolderAsync()
+        {
+            StorageFolder serverRoot = await ((App)Application.Current).GetServerFolderAsync();
+            return await serverRoot.CreateFolderAsync(DataFolder, CreationCollisionOption.OpenIfExists);
+        }
+
         private static async Task<T> LoadListAsync<T>(string filename) where T : class, new()
         {
             try
             {
-                var folder = await ApplicationData.Current.LocalFolder.GetFolderAsync(DataFolder);
-                var file = await folder.GetFileAsync(filename);
+                StorageFolder dataFolder = await GetDataFolderAsync();
+                StorageFile file = await dataFolder.GetFileAsync(filename);
+
                 string json = await FileIO.ReadTextAsync(file);
                 return JsonConvert.DeserializeObject<T>(json) ?? new T();
             }
@@ -30,9 +38,8 @@ namespace Universal_Pumpkin
         {
             try
             {
-                var localFolder = ApplicationData.Current.LocalFolder;
-                var dataFolder = await localFolder.CreateFolderAsync(DataFolder, CreationCollisionOption.OpenIfExists);
-                var file = await dataFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists);
+                StorageFolder dataFolder = await GetDataFolderAsync();
+                StorageFile file = await dataFolder.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists);
 
                 string json = JsonConvert.SerializeObject(data, Formatting.Indented);
                 await FileIO.WriteTextAsync(file, json);

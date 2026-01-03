@@ -20,8 +20,10 @@ namespace Universal_Pumpkin
         {
             var mode = AppearanceService.Current;
 
+
             if (mode == AppearanceMode.Win10_1709)
             {
+#if UWP1709
                 try
                 {
                     this.Background = (Brush)Application.Current.Resources["AppBackgroundAcrylic"];
@@ -38,6 +40,7 @@ namespace Universal_Pumpkin
                 catch
                 {
                 }
+#endif
             }
             else
             {

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Universal_Pumpkin.Services;
 using Windows.ApplicationModel;
 using Windows.Storage;
+using Windows.UI.Xaml;
 
 namespace Universal_Pumpkin.ViewModels
 {
@@ -13,7 +14,8 @@ namespace Universal_Pumpkin.ViewModels
     {
         public async Task<string> GetFormattedStorageSizeAsync()
         {
-            long bytes = await CalculateFolderSize(ApplicationData.Current.LocalFolder);
+            StorageFolder serverRoot = await ((App)Application.Current).GetServerFolderAsync();
+            long bytes = await CalculateFolderSize(serverRoot);
             return FormatBytes(bytes);
         }
 
@@ -47,12 +49,12 @@ namespace Universal_Pumpkin.ViewModels
 
         public async Task CreateBackupZip(StorageFile destinationFile)
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            StorageFolder serverRoot = await ((App)Application.Current).GetServerFolderAsync();
 
             using (var stream = await destinationFile.OpenStreamForWriteAsync())
             using (var archive = new ZipArchive(stream, ZipArchiveMode.Create))
             {
-                await AddFolderToZip(archive, localFolder, "");
+                await AddFolderToZip(archive, serverRoot, "");
             }
         }
 
@@ -80,12 +82,12 @@ namespace Universal_Pumpkin.ViewModels
 
         public async Task RestoreBackupZip(StorageFile sourceZip)
         {
-            var localFolder = ApplicationData.Current.LocalFolder;
+            StorageFolder serverRoot = await ((App)Application.Current).GetServerFolderAsync();
 
-            try { var w = await localFolder.GetFolderAsync("world"); await w.DeleteAsync(); } catch { }
-            try { var d = await localFolder.GetFolderAsync("data"); await d.DeleteAsync(); } catch { }
-            try { var conf = await localFolder.GetFileAsync("configuration.toml"); await conf.DeleteAsync(); } catch { }
-            try { var feat = await localFolder.GetFileAsync("features.toml"); await feat.DeleteAsync(); } catch { }
+            try { var w = await serverRoot.GetFolderAsync("world"); await w.DeleteAsync(); } catch { }
+            try { var d = await serverRoot.GetFolderAsync("data"); await d.DeleteAsync(); } catch { }
+            try { var conf = await serverRoot.GetFileAsync("configuration.toml"); await conf.DeleteAsync(); } catch { }
+            try { var feat = await serverRoot.GetFileAsync("features.toml"); await feat.DeleteAsync(); } catch { }
 
             using (var stream = await sourceZip.OpenStreamForReadAsync())
             using (var archive = new ZipArchive(stream, ZipArchiveMode.Read))
@@ -97,7 +99,7 @@ namespace Universal_Pumpkin.ViewModels
                     string fullPath = entry.FullName.Replace("/", "\\");
                     string folderPath = Path.GetDirectoryName(fullPath);
 
-                    StorageFolder targetFolder = localFolder;
+                    StorageFolder targetFolder = serverRoot;
                     if (!string.IsNullOrEmpty(folderPath))
                     {
                         string[] parts = folderPath.Split('\\');
@@ -117,13 +119,38 @@ namespace Universal_Pumpkin.ViewModels
             }
         }
 
-        public async Task DeleteWorldData()
+        public async Task DeleteWorldData(StorageFolder serverRoot)
         {
-            var folder = ApplicationData.Current.LocalFolder;
-            try { var w = await folder.GetFolderAsync("world"); await w.DeleteAsync(); } catch { }
-            try { var l = await folder.GetFileAsync("level.dat"); await l.DeleteAsync(); } catch { }
-            try { var lb = await folder.GetFileAsync("level.dat_old"); await lb.DeleteAsync(); } catch { }
-            try { var p = await folder.GetFolderAsync("playerdata"); await p.DeleteAsync(); } catch { }
+            if (serverRoot == null)
+                serverRoot = ApplicationData.Current.LocalFolder;
+
+            try
+            {
+                var world = await serverRoot.GetFolderAsync("world");
+                await world.DeleteAsync();
+            }
+            catch { }
+
+            try
+            {
+                var level = await serverRoot.GetFileAsync("level.dat");
+                await level.DeleteAsync();
+            }
+            catch { }
+
+            try
+            {
+                var levelOld = await serverRoot.GetFileAsync("level.dat_old");
+                await levelOld.DeleteAsync();
+            }
+            catch { }
+
+            try
+            {
+                var playerData = await serverRoot.GetFolderAsync("playerdata");
+                await playerData.DeleteAsync();
+            }
+            catch { }
         }
 
         public string GetAppName()

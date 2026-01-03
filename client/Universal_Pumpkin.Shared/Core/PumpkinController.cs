@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using Universal_Pumpkin.Models;
 using Newtonsoft.Json;
+using Windows.UI.Xaml;
 
 namespace Universal_Pumpkin
 {
@@ -73,22 +74,24 @@ namespace Universal_Pumpkin
             _pendingDeops.Clear();
             GlobalLogEvent += OnGlobalLog;
 
-            var folder = ApplicationData.Current.LocalFolder;
-
             _serverTask = Task.Run(async () =>
             {
+                StorageFolder serverFolder =
+                    await ((App)Application.Current).GetServerFolderAsync();
+
                 bool allowed = await Helpers.BackgroundKeeper.RequestKeepAlive();
 
                 if (!allowed)
                 {
-                    GlobalLogEvent?.Invoke(this, "[Warning] Background execution denied by OS. App may suspend if minimized.");
+                    GlobalLogEvent?.Invoke(this,
+                        "[Warning] Background execution denied by OS. App may suspend if minimized.");
                 }
                 else
                 {
                     GlobalLogEvent?.Invoke(this, "[System] Background execution active.");
                 }
 
-                int result = pumpkin_run_from_config_dir(folder.Path);
+                int result = pumpkin_run_from_config_dir(serverFolder.Path);
 
                 if (_pendingDeops.Count > 0)
                 {
@@ -99,7 +102,8 @@ namespace Universal_Pumpkin
                         if (removed > 0)
                         {
                             await ManagementHelper.SaveOps(ops);
-                            OnGlobalLog(this, $"[System] Processed {removed} pending deops during shutdown.");
+                            OnGlobalLog(this,
+                                $"[System] Processed {removed} pending deops during shutdown.");
                         }
                     }
                     catch { /* Ignore IO errors on shutdown */ }

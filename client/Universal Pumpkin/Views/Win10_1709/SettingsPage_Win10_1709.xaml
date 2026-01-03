@@ -41,32 +41,34 @@
                                    Style="{StaticResource TitleTextBlockStyle}"
                                    Margin="0,0,0,10"/>
 
-            <TextBlock Text="Note: You must restart the app for changes to take effect."
+                        <TextBlock Text="Note: You must restart the app for changes to take effect."
                                    Foreground="OrangeRed"
                                    FontWeight="Bold"
                                    TextWrapping="WrapWholeWords"/>
 
-            <StackPanel  x:Name="AppearanceStackPanel"
+                        <!-- Appearance -->
+                        <StackPanel x:Name="AppearanceStackPanel"
                                     Style="{StaticResource FluentCard}">
                                 <TextBlock Text="Appearance"
                                            Style="{StaticResource SubtitleTextBlockStyle}"/>
 
-                <RadioButton Content="Windows 10 (1507)"
-                 GroupName="AppearanceGroup"
-                 Checked="AppearanceRadio_Checked"
-                 Tag="1507" />
+                                <RadioButton Content="Windows 10 (1507)"
+                                             GroupName="AppearanceGroup"
+                                             Checked="AppearanceRadio_Checked"
+                                             Tag="1507"/>
 
-                <RadioButton Content="Windows 10 (1709)"
-                 GroupName="AppearanceGroup"
-                 Checked="AppearanceRadio_Checked"
-                 Tag="1709" />
+                                <RadioButton Content="Windows 10 (1709)"
+                                             GroupName="AppearanceGroup"
+                                             Checked="AppearanceRadio_Checked"
+                                             Tag="1709"/>
 
-                <RadioButton Content="Windows 11"
-                 GroupName="AppearanceGroup"
-                 Checked="AppearanceRadio_Checked"
-                 Tag="11" />
-            </StackPanel>
+                                <RadioButton Content="Windows 11"
+                                             GroupName="AppearanceGroup"
+                                             Checked="AppearanceRadio_Checked"
+                                             Tag="11"/>
+                        </StackPanel>
 
+                        <!-- Networking -->
                         <StackPanel Style="{StaticResource FluentCard}">
                                 <TextBlock Text="Networking &amp; Protocols"
                                            Style="{StaticResource SubtitleTextBlockStyle}"/>
@@ -75,6 +77,7 @@
                                               Header="Java Edition"
                                               Toggled="Setting_Toggled"
                                               Tag="java_edition"/>
+
                                 <TextBox x:Name="TxtJavaAddr"
                                          Header="Java Address"
                                          TextChanged="Setting_TextChanged"
@@ -84,6 +87,7 @@
                                               Header="Bedrock Edition"
                                               Toggled="Setting_Toggled"
                                               Tag="bedrock_edition"/>
+
                                 <TextBox x:Name="TxtBedrockAddr"
                                          Header="Bedrock Address"
                                          TextChanged="Setting_TextChanged"
@@ -93,10 +97,12 @@
                                               Header="Online Mode (Mojang Auth)"
                                               Toggled="Setting_Toggled"
                                               Tag="online_mode"/>
+
                                 <ToggleSwitch x:Name="SwEncrypt"
                                               Header="Encryption"
                                               Toggled="Setting_Toggled"
                                               Tag="encryption"/>
+
                                 <ToggleSwitch x:Name="SwScrub"
                                               Header="Scrub IPs in Logs"
                                               Toggled="Setting_Toggled"
@@ -110,16 +116,44 @@
                                               Header="LAN Broadcast (Disable if crashing)"
                                               Toggled="Feature_Toggled"
                                               Tag="networking.lan_broadcast|enabled"/>
+
                                 <ToggleSwitch x:Name="SwQuery"
                                               Header="Query Protocol (Disable if crashing)"
                                               Toggled="Feature_Toggled"
                                               Tag="networking.query|enabled"/>
                         </StackPanel>
 
+                        <!-- Gameplay -->
                         <StackPanel Style="{StaticResource FluentCard}">
                                 <TextBlock Text="Gameplay"
                                            Style="{StaticResource SubtitleTextBlockStyle}"/>
 
+                                <!-- SERVER ICON (MERGED FROM 1507) -->
+                                <StackPanel Margin="0,8,0,0">
+                                        <TextBlock Text="Server Icon"
+                                                   Style="{StaticResource SubtitleTextBlockStyle}"/>
+                                        <Image x:Name="ImgServerIcon"
+                                               Width="64"
+                                               Height="64"
+                                               Stretch="UniformToFill"
+                                               Margin="0,8,0,8"
+                                               HorizontalAlignment="Left"
+                                               VerticalAlignment="Center"
+                                               Source="ms-appx:///Assets/StoreLogo.scale-400.png"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                        <Button x:Name="BtnChangeIcon"
+                                                Content="Change Icon"
+                                                Click="BtnChangeIcon_Click"
+                                                Margin="0,0,8,0"/>
+
+                                        <Button x:Name="BtnResetIcon"
+                                                Content="Reset Icon"
+                                                Click="BtnResetIcon_Click"/>
+                                </StackPanel>
+
+                                <!-- Existing Gameplay Controls -->
                                 <TextBox x:Name="TxtMotd"
                                          Header="MOTD"
                                          TextChanged="Setting_TextChanged"
@@ -154,16 +188,19 @@
                                               Header="Hardcore"
                                               Toggled="Setting_Toggled"
                                               Tag="hardcore"/>
+
                                 <ToggleSwitch x:Name="SwNether"
                                               Header="Allow Nether"
                                               Toggled="Setting_Toggled"
                                               Tag="allow_nether"/>
+
                                 <TextBox x:Name="TxtSeed"
                                          Header="Level Seed"
                                          TextChanged="Setting_TextChanged"
                                          Tag="seed"/>
                         </StackPanel>
 
+                        <!-- Performance -->
                         <StackPanel Style="{StaticResource FluentCard}">
                                 <TextBlock Text="Performance &amp; Limits"
                                            Style="{StaticResource SubtitleTextBlockStyle}"/>
@@ -173,6 +210,7 @@
                                          InputScope="Number"
                                          TextChanged="Setting_TextChanged"
                                          Tag="max_players"/>
+
                                 <TextBox x:Name="TxtTPS"
                                          Header="Target TPS"
                                          InputScope="Number"
@@ -196,6 +234,7 @@
                                            Foreground="Gray"/>
                         </StackPanel>
 
+                        <!-- Security -->
                         <StackPanel Style="{StaticResource FluentCard}">
                                 <TextBlock Text="Security"
                                            Style="{StaticResource SubtitleTextBlockStyle}"/>
@@ -205,20 +244,24 @@
                                          InputScope="Number"
                                          TextChanged="Setting_TextChanged"
                                          Tag="op_permission_level"/>
+
                                 <ToggleSwitch x:Name="SwWhite"
                                               Header="Enable Whitelist"
                                               Toggled="Setting_Toggled"
                                               Tag="white_list"/>
+
                                 <ToggleSwitch x:Name="SwEnforceWhite"
                                               Header="Enforce Whitelist"
                                               Toggled="Setting_Toggled"
                                               Tag="enforce_whitelist"/>
+
                                 <ToggleSwitch x:Name="SwChatReport"
                                               Header="Allow Chat Reports"
                                               Toggled="Setting_Toggled"
                                               Tag="allow_chat_reports"/>
                         </StackPanel>
 
+                        <!-- Maintenance -->
                         <StackPanel Style="{StaticResource FluentCard}"
                                     BorderBrush="Red">
                                 <TextBlock Text="Maintenance"
@@ -241,10 +284,12 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
+
                                         <Button x:Name="BtnBackup"
                                                 Content="Backup to Zip"
                                                 HorizontalAlignment="Stretch"
                                                 Click="BtnBackup_Click"/>
+
                                         <Button x:Name="BtnRestore"
                                                 Grid.Column="1"
                                                 Content="Restore Zip"
@@ -252,27 +297,55 @@
                                                 Click="BtnRestore_Click"/>
                                 </Grid>
 
+                                <!-- MERGED BUTTONS FROM 1507 -->
+                                <Button x:Name="BtnOpenServerFolder"
+                                        Content="Open Server Folder"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,8,0,0"
+                                        Click="BtnOpenServerFolder_Click"/>
+
+                                <Button x:Name="BtnOpenLocalState"
+                                        Content="Open LocalState Folder"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,8,0,0"
+                                        Click="BtnOpenLocalState_Click"/>
+
+                                <Button x:Name="BtnChangeLocation"
+                                        Content="Change Server Location"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,8,0,0"
+                                        Click="BtnChangeLocation_Click"/>
+
                                 <Button x:Name="BtnReset"
                                         Content="Reset World Data (Delete Level)"
                                         Background="DarkRed"
                                         Foreground="White"
-                                        Click="BtnReset_Click"
-                                        HorizontalAlignment="Stretch"/>
-                                <Button Content="Open LocalState Folder"
-                                        Click="BtnOpen_Click"
-                                        Margin="0,10,0,0"
-                                        HorizontalAlignment="Stretch"/>
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,8,0,0"
+                                        Click="BtnReset_Click"/>
+
+                                <Button x:Name="BtnResetAllSettings"
+                                        Content="Reset All Settings"
+                                        Background="DarkRed"
+                                        Foreground="White"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,8,0,0"
+                                        Click="BtnResetAllSettings_Click"/>
                         </StackPanel>
 
+                        <!-- Information -->
                         <StackPanel Style="{StaticResource FluentCard}">
                                 <TextBlock Text="Information"
                                            Style="{StaticResource SubtitleTextBlockStyle}"/>
+
                                 <Button Content="About Universal Pumpkin"
-                                        Click="AboutButton_Click"
-                                        Margin="0,0,0,8"/>
+                                        Margin="0,0,0,8"
+                                        Click="AboutButton_Click"/>
+
                                 <Button Content="Disclaimer &amp; Legal"
                                         Click="DisclaimerButton_Click"/>
                         </StackPanel>
+
                 </StackPanel>
         </ScrollViewer>
 </page:SettingsPageBase>

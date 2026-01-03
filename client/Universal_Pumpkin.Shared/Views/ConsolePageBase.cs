@@ -773,7 +773,20 @@ namespace Universal_Pumpkin.Shared.Views
             if (!selected.Any()) return;
 
             var text = string.Join("\n", selected.Select(x =>
-                $"{x.Timestamp:HH:mm:ss} [{x.Level}] {x.Message}"));
+            {
+                string content;
+
+                if (x.Segments != null && x.Segments.Count > 0)
+                {
+                    content = string.Join("", x.Segments.Select(s => s.Text));
+                }
+                else
+                {
+                    content = x.Message;
+                }
+
+                return $"{x.Timestamp:HH:mm:ss} [{x.Level}] {content}";
+            }));
 
             var dp = new DataPackage();
             dp.SetText(text);

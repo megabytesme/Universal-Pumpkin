@@ -1,259 +1,333 @@
 ﻿<page:SettingsPageBase
-        x:Class="Universal_Pumpkin.SettingsPage_Win10_1507"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:page="using:Universal_Pumpkin.Shared.Views"
-        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    x:Class="Universal_Pumpkin.SettingsPage_Win10_1507"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:page="using:Universal_Pumpkin.Shared.Views"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-        <Page.Resources>
-                <Style x:Key="GroupPanelStyle"
-                       TargetType="StackPanel">
-                        <Setter Property="Background"
-                                Value="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"/>
-                        <Setter Property="Padding"
-                                Value="15"/>
-                        <Setter Property="BorderThickness"
-                                Value="1"/>
-                        <Setter Property="BorderBrush"
-                                Value="{ThemeResource SystemControlForegroundBaseLowBrush}"/>
-                        <Setter Property="Margin"
-                                Value="10"/>
-                </Style>
-        </Page.Resources>
+    <Page.Resources>
+        <Style x:Key="GroupPanelStyle"
+               TargetType="StackPanel">
+            <Setter Property="Background"
+                    Value="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"/>
+            <Setter Property="Padding"
+                    Value="15"/>
+            <Setter Property="BorderThickness"
+                    Value="1"/>
+            <Setter Property="BorderBrush"
+                    Value="{ThemeResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="Margin"
+                    Value="10"/>
+        </Style>
+    </Page.Resources>
 
-        <ScrollViewer Padding="20">
-                <StackPanel Padding="15"
-                            MaxWidth="800"
-                            HorizontalAlignment="Center">
-                        <TextBlock Text="Server Configuration"
-                                   Style="{StaticResource TitleTextBlockStyle}"
-                                   Margin="0,0,0,10"/>
-                        <TextBlock Text="Note: You must restart the app for changes to take effect."
-                                   Foreground="OrangeRed"
-                                   FontWeight="Bold"
-                                   TextWrapping="WrapWholeWords"/>
+    <ScrollViewer Padding="20">
+        <StackPanel Padding="15"
+                    MaxWidth="800"
+                    HorizontalAlignment="Center">
+            <TextBlock Text="Server Configuration"
+                       Style="{StaticResource TitleTextBlockStyle}"
+                       Margin="0,0,0,10"/>
 
-                        <StackPanel  x:Name="AppearanceStackPanel"
-                                     Style="{StaticResource GroupPanelStyle}">
-                                <TextBlock Text="Appearance"
-                                           Style="{StaticResource SubtitleTextBlockStyle}"/>
+            <TextBlock Text="Note: You must restart the app for changes to take effect."
+                       Foreground="OrangeRed"
+                       FontWeight="Bold"
+                       TextWrapping="WrapWholeWords"/>
 
-                                <RadioButton Content="Windows 10 (1507)"
-                                             GroupName="AppearanceGroup"
-                                             Checked="AppearanceRadio_Checked"
-                                             Tag="1507"/>
+            <StackPanel x:Name="AppearanceStackPanel"
+                        Style="{StaticResource GroupPanelStyle}">
+                <TextBlock Text="Appearance"
+                           Style="{StaticResource SubtitleTextBlockStyle}"/>
 
-                                <RadioButton Content="Windows 10 (1709)"
-                                             GroupName="AppearanceGroup"
-                                             Checked="AppearanceRadio_Checked"
-                                             Tag="1709"/>
+                <RadioButton Content="Windows 10 (1507)"
+                             GroupName="AppearanceGroup"
+                             Checked="AppearanceRadio_Checked"
+                             Tag="1507"/>
 
-                                <RadioButton Content="Windows 11"
-                                             GroupName="AppearanceGroup"
-                                             Checked="AppearanceRadio_Checked"
-                                             Tag="11"/>
-                        </StackPanel>
+                <RadioButton Content="Windows 10 (1709)"
+                             GroupName="AppearanceGroup"
+                             Checked="AppearanceRadio_Checked"
+                             Tag="1709"/>
 
-                        <StackPanel Style="{StaticResource GroupPanelStyle}">
-                                <TextBlock Text="Networking &amp; Protocols"
-                                           Style="{StaticResource SubtitleTextBlockStyle}"/>
-                                <ToggleSwitch x:Name="SwJava"
-                                              Header="Java Edition"
-                                              Toggled="Setting_Toggled"
-                                              Tag="java_edition"/>
-                                <TextBox x:Name="TxtJavaAddr"
-                                         Header="Java Address"
-                                         TextChanged="Setting_TextChanged"
-                                         Tag="java_edition_address"/>
+                <RadioButton Content="Windows 11"
+                             GroupName="AppearanceGroup"
+                             Checked="AppearanceRadio_Checked"
+                             Tag="11"/>
+            </StackPanel>
 
-                                <ToggleSwitch x:Name="SwBedrock"
-                                              Header="Bedrock Edition"
-                                              Toggled="Setting_Toggled"
-                                              Tag="bedrock_edition"/>
-                                <TextBox x:Name="TxtBedrockAddr"
-                                         Header="Bedrock Address"
-                                         TextChanged="Setting_TextChanged"
-                                         Tag="bedrock_edition_address"/>
+            <StackPanel Style="{StaticResource GroupPanelStyle}">
+                <TextBlock Text="Networking &amp; Protocols"
+                           Style="{StaticResource SubtitleTextBlockStyle}"/>
 
-                                <ToggleSwitch x:Name="SwOnline"
-                                              Header="Online Mode (Mojang Auth)"
-                                              Toggled="Setting_Toggled"
-                                              Tag="online_mode"/>
-                                <ToggleSwitch x:Name="SwEncrypt"
-                                              Header="Encryption"
-                                              Toggled="Setting_Toggled"
-                                              Tag="encryption"/>
-                                <ToggleSwitch x:Name="SwScrub"
-                                              Header="Scrub IPs in Logs"
-                                              Toggled="Setting_Toggled"
-                                              Tag="scrub_ips"/>
+                <ToggleSwitch x:Name="SwJava"
+                              Header="Java Edition"
+                              Toggled="Setting_Toggled"
+                              Tag="java_edition"/>
 
-                                <TextBlock Text="Advanced Networking (Features.toml)"
-                                           Margin="0,10,0,0"
-                                           FontWeight="SemiBold"/>
-                                <ToggleSwitch x:Name="SwLan"
-                                              Header="LAN Broadcast (Disable if crashing)"
-                                              Toggled="Feature_Toggled"
-                                              Tag="networking.lan_broadcast|enabled"/>
-                                <ToggleSwitch x:Name="SwQuery"
-                                              Header="Query Protocol (Disable if crashing)"
-                                              Toggled="Feature_Toggled"
-                                              Tag="networking.query|enabled"/>
-                        </StackPanel>
+                <TextBox x:Name="TxtJavaAddr"
+                         Header="Java Address"
+                         TextChanged="Setting_TextChanged"
+                         Tag="java_edition_address"/>
 
-                        <StackPanel Style="{StaticResource GroupPanelStyle}">
-                                <TextBlock Text="Gameplay"
-                                           Style="{StaticResource SubtitleTextBlockStyle}"/>
-                                <TextBox x:Name="TxtMotd"
-                                         Header="MOTD"
-                                         TextChanged="Setting_TextChanged"
-                                         Tag="motd"/>
+                <ToggleSwitch x:Name="SwBedrock"
+                              Header="Bedrock Edition"
+                              Toggled="Setting_Toggled"
+                              Tag="bedrock_edition"/>
 
-                                <ComboBox x:Name="CmbGamemode"
-                                          Header="Default Gamemode"
-                                          SelectionChanged="Setting_ComboChanged"
-                                          Tag="default_gamemode">
-                                        <ComboBoxItem Content="Survival"/>
-                                        <ComboBoxItem Content="Creative"/>
-                                        <ComboBoxItem Content="Adventure"/>
-                                        <ComboBoxItem Content="Spectator"/>
-                                </ComboBox>
-                                <ToggleSwitch x:Name="SwForceGame"
-                                              Header="Force Gamemode"
-                                              Toggled="Setting_Toggled"
-                                              Tag="force_gamemode"/>
+                <TextBox x:Name="TxtBedrockAddr"
+                         Header="Bedrock Address"
+                         TextChanged="Setting_TextChanged"
+                         Tag="bedrock_edition_address"/>
 
-                                <ComboBox x:Name="CmbDifficulty"
-                                          Header="Difficulty"
-                                          SelectionChanged="Setting_ComboChanged"
-                                          Tag="default_difficulty">
-                                        <ComboBoxItem Content="Peaceful"/>
-                                        <ComboBoxItem Content="Easy"/>
-                                        <ComboBoxItem Content="Normal"/>
-                                        <ComboBoxItem Content="Hard"/>
-                                </ComboBox>
+                <ToggleSwitch x:Name="SwOnline"
+                              Header="Online Mode (Mojang Auth)"
+                              Toggled="Setting_Toggled"
+                              Tag="online_mode"/>
 
-                                <ToggleSwitch x:Name="SwHardcore"
-                                              Header="Hardcore"
-                                              Toggled="Setting_Toggled"
-                                              Tag="hardcore"/>
-                                <ToggleSwitch x:Name="SwNether"
-                                              Header="Allow Nether"
-                                              Toggled="Setting_Toggled"
-                                              Tag="allow_nether"/>
-                                <TextBox x:Name="TxtSeed"
-                                         Header="Level Seed"
-                                         TextChanged="Setting_TextChanged"
-                                         Tag="seed"/>
-                        </StackPanel>
+                <ToggleSwitch x:Name="SwEncrypt"
+                              Header="Encryption"
+                              Toggled="Setting_Toggled"
+                              Tag="encryption"/>
 
-                        <StackPanel Style="{StaticResource GroupPanelStyle}">
-                                <TextBlock Text="Performance &amp; Limits"
-                                           Style="{StaticResource SubtitleTextBlockStyle}"/>
-                                <TextBox x:Name="TxtMaxPlayers"
-                                         Header="Max Players"
-                                         InputScope="Number"
-                                         TextChanged="Setting_TextChanged"
-                                         Tag="max_players"/>
-                                <TextBox x:Name="TxtTPS"
-                                         Header="Target TPS"
-                                         InputScope="Number"
-                                         TextChanged="Setting_TextChanged"
-                                         Tag="tps"/>
+                <ToggleSwitch x:Name="SwScrub"
+                              Header="Scrub IPs in Logs"
+                              Toggled="Setting_Toggled"
+                              Tag="scrub_ips"/>
 
-                                <TextBlock Text="View Distance (Chunks)"/>
-                                <Slider x:Name="SldView"
-                                        Minimum="2"
-                                        Maximum="32"
-                                        ValueChanged="SldView_ValueChanged"/>
-                                <TextBlock x:Name="TxtViewVal"
-                                           Foreground="Gray"/>
+                <TextBlock Text="Advanced Networking (Features.toml)"
+                           Margin="0,10,0,0"
+                           FontWeight="SemiBold"/>
 
-                                <TextBlock Text="Simulation Distance (Chunks)"/>
-                                <Slider x:Name="SldSim"
-                                        Minimum="2"
-                                        Maximum="32"
-                                        ValueChanged="SldSim_ValueChanged"/>
-                                <TextBlock x:Name="TxtSimVal"
-                                           Foreground="Gray"/>
-                        </StackPanel>
+                <ToggleSwitch x:Name="SwLan"
+                              Header="LAN Broadcast (Disable if crashing)"
+                              Toggled="Feature_Toggled"
+                              Tag="networking.lan_broadcast|enabled"/>
 
-                        <StackPanel Style="{StaticResource GroupPanelStyle}">
-                                <TextBlock Text="Security"
-                                           Style="{StaticResource SubtitleTextBlockStyle}"/>
-                                <TextBox x:Name="TxtOpLevel"
-                                         Header="OP Permission Level (1-4)"
-                                         InputScope="Number"
-                                         TextChanged="Setting_TextChanged"
-                                         Tag="op_permission_level"/>
-                                <ToggleSwitch x:Name="SwWhite"
-                                              Header="Enable Whitelist"
-                                              Toggled="Setting_Toggled"
-                                              Tag="white_list"/>
-                                <ToggleSwitch x:Name="SwEnforceWhite"
-                                              Header="Enforce Whitelist"
-                                              Toggled="Setting_Toggled"
-                                              Tag="enforce_whitelist"/>
-                                <ToggleSwitch x:Name="SwChatReport"
-                                              Header="Allow Chat Reports"
-                                              Toggled="Setting_Toggled"
-                                              Tag="allow_chat_reports"/>
-                        </StackPanel>
+                <ToggleSwitch x:Name="SwQuery"
+                              Header="Query Protocol (Disable if crashing)"
+                              Toggled="Feature_Toggled"
+                              Tag="networking.query|enabled"/>
+            </StackPanel>
 
-                        <StackPanel Style="{StaticResource GroupPanelStyle}"
-                                    BorderBrush="Red">
-                                <TextBlock Text="Maintenance"
-                                           Style="{StaticResource SubtitleTextBlockStyle}"
-                                           Foreground="Red"/>
+            <StackPanel Style="{StaticResource GroupPanelStyle}">
+                <TextBlock Text="Gameplay"
+                           Style="{StaticResource SubtitleTextBlockStyle}"/>
 
-                                <StackPanel Orientation="Horizontal"
-                                            Margin="0,0,0,12">
-                                        <TextBlock Text="Total Data Size:"
-                                                   Foreground="Gray"/>
-                                        <TextBlock x:Name="TxtWorldSize"
-                                                   Text="Calculating..."
-                                                   Margin="8,0,0,0"
-                                                   FontWeight="Bold"/>
-                                </StackPanel>
-
-                                <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Button x:Name="BtnBackup"
-                                                Content="Backup to Zip"
-                                                HorizontalAlignment="Stretch"
-                                                Click="BtnBackup_Click"/>
-                                        <Button x:Name="BtnRestore"
-                                                Grid.Column="1"
-                                                Content="Restore Zip"
-                                                HorizontalAlignment="Stretch"
-                                                Click="BtnRestore_Click"
-                                                Margin="8,0,0,0"/>
-                                </Grid>
-
-                                <Button x:Name="BtnReset"
-                                        Content="Reset World Data (Delete Level)"
-                                        Background="DarkRed"
-                                        Foreground="White"
-                                        Click="BtnReset_Click"
-                                        HorizontalAlignment="Stretch"/>
-                                <Button Content="Open LocalState Folder"
-                                        Click="BtnOpen_Click"
-                                        Margin="0,10,0,0"
-                                        HorizontalAlignment="Stretch"/>
-                        </StackPanel>
-
-                        <StackPanel Style="{StaticResource GroupPanelStyle}">
-                                <TextBlock Text="Information"
-                                           Style="{StaticResource SubtitleTextBlockStyle}"/>
-                                <Button Content="About Universal Pumpkin"
-                                        Click="AboutButton_Click"
-                                        Margin="0,0,0,8"/>
-                                <Button Content="Disclaimer &amp; Legal"
-                                        Click="DisclaimerButton_Click"/>
-                        </StackPanel>
+                <StackPanel Margin="0,8,0,0">
+                    <TextBlock Text="Server Icon"
+                               Style="{StaticResource SubtitleTextBlockStyle}"/>
+                    <Image x:Name="ImgServerIcon"
+                           Width="64"
+                           Height="64"
+                           Stretch="UniformToFill"
+                           Margin="0,8,0,8"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Center"
+                           Source="ms-appx:///Assets/StoreLogo.scale-400.png"/>
                 </StackPanel>
-        </ScrollViewer>
+
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="BtnChangeIcon"
+                            Content="Change Icon"
+                            Click="BtnChangeIcon_Click"
+                            Margin="0,0,8,0"/>
+
+                    <Button x:Name="BtnResetIcon"
+                            Content="Reset Icon"
+                            Click="BtnResetIcon_Click"/>
+                </StackPanel>
+
+                <TextBox x:Name="TxtMotd"
+                         Header="MOTD"
+                         TextChanged="Setting_TextChanged"
+                         Tag="motd"/>
+
+                <ComboBox x:Name="CmbGamemode"
+                          Header="Default Gamemode"
+                          SelectionChanged="Setting_ComboChanged"
+                          Tag="default_gamemode">
+                    <ComboBoxItem Content="Survival"/>
+                    <ComboBoxItem Content="Creative"/>
+                    <ComboBoxItem Content="Adventure"/>
+                    <ComboBoxItem Content="Spectator"/>
+                </ComboBox>
+
+                <ToggleSwitch x:Name="SwForceGame"
+                              Header="Force Gamemode"
+                              Toggled="Setting_Toggled"
+                              Tag="force_gamemode"/>
+
+                <ComboBox x:Name="CmbDifficulty"
+                          Header="Difficulty"
+                          SelectionChanged="Setting_ComboChanged"
+                          Tag="default_difficulty">
+                    <ComboBoxItem Content="Peaceful"/>
+                    <ComboBoxItem Content="Easy"/>
+                    <ComboBoxItem Content="Normal"/>
+                    <ComboBoxItem Content="Hard"/>
+                </ComboBox>
+
+                <ToggleSwitch x:Name="SwHardcore"
+                              Header="Hardcore"
+                              Toggled="Setting_Toggled"
+                              Tag="hardcore"/>
+
+                <ToggleSwitch x:Name="SwNether"
+                              Header="Allow Nether"
+                              Toggled="Setting_Toggled"
+                              Tag="allow_nether"/>
+
+                <TextBox x:Name="TxtSeed"
+                         Header="Level Seed"
+                         TextChanged="Setting_TextChanged"
+                         Tag="seed"/>
+            </StackPanel>
+
+            <StackPanel Style="{StaticResource GroupPanelStyle}">
+                <TextBlock Text="Performance &amp; Limits"
+                           Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+                <TextBox x:Name="TxtMaxPlayers"
+                         Header="Max Players"
+                         InputScope="Number"
+                         TextChanged="Setting_TextChanged"
+                         Tag="max_players"/>
+
+                <TextBox x:Name="TxtTPS"
+                         Header="Target TPS"
+                         InputScope="Number"
+                         TextChanged="Setting_TextChanged"
+                         Tag="tps"/>
+
+                <TextBlock Text="View Distance (Chunks)"/>
+                <Slider x:Name="SldView"
+                        Minimum="2"
+                        Maximum="32"
+                        ValueChanged="SldView_ValueChanged"/>
+                <TextBlock x:Name="TxtViewVal"
+                           Foreground="Gray"/>
+
+                <TextBlock Text="Simulation Distance (Chunks)"/>
+                <Slider x:Name="SldSim"
+                        Minimum="2"
+                        Maximum="32"
+                        ValueChanged="SldSim_ValueChanged"/>
+                <TextBlock x:Name="TxtSimVal"
+                           Foreground="Gray"/>
+            </StackPanel>
+
+            <StackPanel Style="{StaticResource GroupPanelStyle}">
+                <TextBlock Text="Security"
+                           Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+                <TextBox x:Name="TxtOpLevel"
+                         Header="OP Permission Level (1-4)"
+                         InputScope="Number"
+                         TextChanged="Setting_TextChanged"
+                         Tag="op_permission_level"/>
+
+                <ToggleSwitch x:Name="SwWhite"
+                              Header="Enable Whitelist"
+                              Toggled="Setting_Toggled"
+                              Tag="white_list"/>
+
+                <ToggleSwitch x:Name="SwEnforceWhite"
+                              Header="Enforce Whitelist"
+                              Toggled="Setting_Toggled"
+                              Tag="enforce_whitelist"/>
+
+                <ToggleSwitch x:Name="SwChatReport"
+                              Header="Allow Chat Reports"
+                              Toggled="Setting_Toggled"
+                              Tag="allow_chat_reports"/>
+            </StackPanel>
+
+            <StackPanel Style="{StaticResource GroupPanelStyle}"
+                        BorderBrush="Red">
+                <TextBlock Text="Maintenance"
+                           Style="{StaticResource SubtitleTextBlockStyle}"
+                           Foreground="Red"/>
+                <StackPanel Orientation="Horizontal"
+                            Margin="0,0,0,12">
+                    <TextBlock Text="Total Data Size:"
+                               Foreground="Gray"/>
+                    <TextBlock x:Name="TxtWorldSize"
+                               Text="Calculating..."
+                               Margin="8,0,0,0"
+                               FontWeight="Bold"/>
+                </StackPanel>
+                <Grid Margin="0,0,0,8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button x:Name="BtnBackup"
+                            Content="Backup to Zip"
+                            HorizontalAlignment="Stretch"
+                            Click="BtnBackup_Click"/>
+
+                    <Button x:Name="BtnRestore"
+                            Grid.Column="1"
+                            Content="Restore Zip"
+                            HorizontalAlignment="Stretch"
+                            Margin="8,0,0,0"
+                            Click="BtnRestore_Click"/>
+
+                    <Button x:Name="BtnOpenServerFolder"
+                            Grid.Row="1"
+                            Content="Open Server Folder"
+                            HorizontalAlignment="Stretch"
+                            Margin="0,8,0,0"
+                            Click="BtnOpenServerFolder_Click"/>
+
+                    <Button x:Name="BtnOpenLocalState"
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Content="Open LocalState Folder"
+                            HorizontalAlignment="Stretch"
+                            Margin="8,8,0,0"
+                            Click="BtnOpenLocalState_Click"/>
+                </Grid>
+
+                <Button x:Name="BtnChangeLocation"
+                        Content="Change Server Location"
+                        HorizontalAlignment="Stretch"
+                        Click="BtnChangeLocation_Click"/>
+
+                <Button x:Name="BtnReset"
+                        Content="Reset World Data (Delete Level)"
+                        Background="DarkRed"
+                        Foreground="White"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,8,0,0"
+                        Click="BtnReset_Click"/>
+
+                <Button x:Name="BtnResetAllSettings"
+                        Content="Reset All Settings"
+                        Background="DarkRed"
+                        Foreground="White"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,8,0,0"
+                        Click="BtnResetAllSettings_Click"/>
+            </StackPanel>
+
+            <StackPanel Style="{StaticResource GroupPanelStyle}">
+                <TextBlock Text="Information"
+                           Style="{StaticResource SubtitleTextBlockStyle}"/>
+
+                <Button Content="About Universal Pumpkin"
+                        Margin="0,0,0,8"
+                        Click="AboutButton_Click"/>
+
+                <Button Content="Disclaimer &amp; Legal"
+                        Click="DisclaimerButton_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </page:SettingsPageBase>
