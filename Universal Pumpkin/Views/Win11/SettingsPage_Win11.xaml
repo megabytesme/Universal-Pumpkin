@@ -37,27 +37,26 @@
                     </StackPanel>
                 </muxc:Expander.Header>
 
-                <StackPanel x:Name="AppearanceStackPanel" Spacing="12">
+                <StackPanel x:Name="AppearanceStackPanel"
+                            Spacing="12">
                     <RadioButton Content="Windows 10 (1507)"
-                 GroupName="AppearanceGroup"
-                 Checked="AppearanceRadio_Checked"
-                 Tag="1507" />
+                                 GroupName="AppearanceGroup"
+                                 Checked="AppearanceRadio_Checked"
+                                 Tag="1507"/>
 
                     <RadioButton Content="Windows 10 (1709)"
-                 GroupName="AppearanceGroup"
-                 Checked="AppearanceRadio_Checked"
-                 Tag="1709" />
+                                 GroupName="AppearanceGroup"
+                                 Checked="AppearanceRadio_Checked"
+                                 Tag="1709"/>
 
                     <RadioButton Content="Windows 11"
-                 GroupName="AppearanceGroup"
-                 Checked="AppearanceRadio_Checked"
-                 Tag="11" />
+                                 GroupName="AppearanceGroup"
+                                 Checked="AppearanceRadio_Checked"
+                                 Tag="11"/>
                 </StackPanel>
             </muxc:Expander>
 
-            <!-- 1. Networking -->
-            <muxc:Expander HorizontalAlignment="Stretch"
-                           IsExpanded="False">
+            <muxc:Expander HorizontalAlignment="Stretch">
                 <muxc:Expander.Header>
                     <StackPanel Orientation="Horizontal"
                                 Spacing="12">
@@ -103,6 +102,7 @@
                     <MenuFlyoutSeparator/>
                     <TextBlock Text="Advanced Features"
                                FontWeight="SemiBold"/>
+
                     <ToggleSwitch x:Name="SwLan"
                                   Header="LAN Broadcast"
                                   Toggled="Feature_Toggled"
@@ -114,7 +114,6 @@
                 </StackPanel>
             </muxc:Expander>
 
-            <!-- 2. Gameplay -->
             <muxc:Expander HorizontalAlignment="Stretch">
                 <muxc:Expander.Header>
                     <StackPanel Orientation="Horizontal"
@@ -127,6 +126,28 @@
                 </muxc:Expander.Header>
 
                 <StackPanel Spacing="12">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Server Icon"
+                                   Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                        <Image x:Name="ImgServerIcon"
+                               Width="64"
+                               Height="64"
+                               Stretch="UniformToFill"
+                               HorizontalAlignment="Left"
+                               Source="ms-appx:///Assets/StoreLogo.scale-400.png"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="12">
+                        <Button x:Name="BtnChangeIcon"
+                                Content="Change Icon"
+                                Click="BtnChangeIcon_Click"/>
+
+                        <Button x:Name="BtnResetIcon"
+                                Content="Reset Icon"
+                                Click="BtnResetIcon_Click"/>
+                    </StackPanel>
+
                     <TextBox x:Name="TxtMotd"
                              Header="MOTD"
                              TextChanged="Setting_TextChanged"
@@ -135,8 +156,7 @@
                     <ComboBox x:Name="CmbGamemode"
                               Header="Default Gamemode"
                               SelectionChanged="Setting_ComboChanged"
-                              Tag="default_gamemode"
-                              HorizontalAlignment="Stretch">
+                              Tag="default_gamemode">
                         <ComboBoxItem Content="Survival"/>
                         <ComboBoxItem Content="Creative"/>
                         <ComboBoxItem Content="Adventure"/>
@@ -151,8 +171,7 @@
                     <ComboBox x:Name="CmbDifficulty"
                               Header="Difficulty"
                               SelectionChanged="Setting_ComboChanged"
-                              Tag="default_difficulty"
-                              HorizontalAlignment="Stretch">
+                              Tag="default_difficulty">
                         <ComboBoxItem Content="Peaceful"/>
                         <ComboBoxItem Content="Easy"/>
                         <ComboBoxItem Content="Normal"/>
@@ -174,7 +193,6 @@
                 </StackPanel>
             </muxc:Expander>
 
-            <!-- 3. Performance -->
             <muxc:Expander HorizontalAlignment="Stretch">
                 <muxc:Expander.Header>
                     <StackPanel Orientation="Horizontal"
@@ -216,7 +234,6 @@
                 </StackPanel>
             </muxc:Expander>
 
-            <!-- 4. Security -->
             <muxc:Expander HorizontalAlignment="Stretch">
                 <muxc:Expander.Header>
                     <StackPanel Orientation="Horizontal"
@@ -249,7 +266,6 @@
                 </StackPanel>
             </muxc:Expander>
 
-            <!-- 5. Maintenance -->
             <muxc:Expander HorizontalAlignment="Stretch">
                 <muxc:Expander.Header>
                     <StackPanel Orientation="Horizontal"
@@ -278,14 +294,27 @@
                         </Grid.ColumnDefinitions>
                         <Button x:Name="BtnBackup"
                                 Content="Backup to Zip"
-                                HorizontalAlignment="Stretch"
                                 Click="BtnBackup_Click"/>
                         <Button x:Name="BtnRestore"
                                 Grid.Column="1"
                                 Content="Restore Zip"
-                                HorizontalAlignment="Stretch"
                                 Click="BtnRestore_Click"/>
                     </Grid>
+
+                    <Button x:Name="BtnOpenServerFolder"
+                            Content="Open Server Folder"
+                            Click="BtnOpenServerFolder_Click"
+                            HorizontalAlignment="Stretch"/>
+
+                    <Button x:Name="BtnOpenLocalState"
+                            Content="Open LocalState Folder"
+                            Click="BtnOpenLocalState_Click"
+                            HorizontalAlignment="Stretch"/>
+
+                    <Button x:Name="BtnChangeLocation"
+                            Content="Change Server Location"
+                            Click="BtnChangeLocation_Click"
+                            HorizontalAlignment="Stretch"/>
 
                     <Button x:Name="BtnReset"
                             Content="Reset World Data (Delete Level)"
@@ -293,13 +322,16 @@
                             Foreground="White"
                             Click="BtnReset_Click"
                             HorizontalAlignment="Stretch"/>
-                    <Button Content="Open LocalState Folder"
-                            Click="BtnOpen_Click"
+
+                    <Button x:Name="BtnResetAllSettings"
+                            Content="Reset All Settings"
+                            Background="DarkRed"
+                            Foreground="White"
+                            Click="BtnResetAllSettings_Click"
                             HorizontalAlignment="Stretch"/>
                 </StackPanel>
             </muxc:Expander>
 
-            <!-- 6. About -->
             <muxc:Expander HorizontalAlignment="Stretch"
                            IsExpanded="True">
                 <muxc:Expander.Header>

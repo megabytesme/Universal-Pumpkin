@@ -11,6 +11,8 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Storage;
+using Windows.Storage.AccessCache;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -120,7 +122,9 @@ namespace Universal_Pumpkin
                 }
                 Window.Current.Activate();
 
+                _ = GetServerFolderAsync();
                 _ = CheckForUpdatesAtStartup();
+                _ = EnsureServerIconExistsAsync();
             }
         }
 
@@ -190,6 +194,103 @@ namespace Universal_Pumpkin
                     }
                 });
             }
+        }
+
+        private async Task EnsureServerIconExistsAsync()
+        {
+            var folder = await GetServerFolderAsync();
+            var existing = await folder.TryGetItemAsync("icon.png");
+
+            if (existing == null)
+            {
+                StorageFile packaged = await StorageFile.GetFileFromApplicationUriAsync(
+                    new Uri("ms-appx:///Assets/StoreLogo.scale-400.png"));
+
+                var buffer = await FileIO.ReadBufferAsync(packaged);
+                byte[] bytes = buffer.ToArray();
+
+                await IconNormaliser.NormaliseAndWriteIconAsync(bytes, folder, "icon.png");
+            }
+        }
+
+        public async Task<StorageFolder> GetServerFolderAsync()
+        {
+            if (StorageApplicationPermissions.FutureAccessList.ContainsItem("ServerRoot"))
+            {
+                try
+                {
+                    return await StorageApplicationPermissions.FutureAccessList.GetFolderAsync("ServerRoot");
+                }
+                catch
+                {
+                    return await HandleServerFolderAccessFailureAsync();
+                }
+            }
+
+            object stored = ApplicationData.Current.LocalSettings.Values["server_root"];
+            if (stored is string path && !string.IsNullOrWhiteSpace(path))
+            {
+                try
+                {
+                    return await StorageFolder.GetFolderFromPathAsync(path);
+                }
+                catch
+                {
+                    return await HandleServerFolderAccessFailureAsync();
+                }
+            }
+
+            return ApplicationData.Current.LocalFolder;
+        }
+
+        private async Task<StorageFolder> HandleServerFolderAccessFailureAsync()
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "Cannot Access Server Folder",
+                Content = "The server folder cannot be accessed. It may have been moved, deleted, or permission was revoked.",
+                PrimaryButtonText = "Select Folder",
+                SecondaryButtonText = "Use Default",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary
+            };
+
+            if (Window.Current.Content is FrameworkElement fe && fe.XamlRoot != null)
+                dialog.XamlRoot = fe.XamlRoot;
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                var folder = await PickServerFolderAsync();
+                if (folder != null)
+                    return folder;
+            }
+            else if (result == ContentDialogResult.Secondary)
+            {
+                return ApplicationData.Current.LocalFolder;
+            }
+
+            return ApplicationData.Current.LocalFolder;
+        }
+
+        public async Task<StorageFolder> PickServerFolderAsync()
+        {
+            var picker = new Windows.Storage.Pickers.FolderPicker();
+            picker.SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.DocumentsLibrary;
+            picker.FileTypeFilter.Add("*");
+
+            StorageFolder folder = await picker.PickSingleFolderAsync();
+            if (folder != null)
+            {
+                StorageApplicationPermissions.FutureAccessList.AddOrReplace("ServerRoot", folder);
+
+                ApplicationData.Current.LocalSettings.Values["server_root"] = folder.Path;
+
+                return folder;
+            }
+
+            return null;
         }
 
         /// <summary>

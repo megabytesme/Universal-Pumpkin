@@ -15,6 +15,9 @@ using Universal_Pumpkin.ViewModels;
 using Universal_Pumpkin.Models;
 using Universal_Pumpkin.Services;
 using System.Diagnostics;
+using System.IO;
+using Windows.UI.Xaml.Media.Imaging;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace Universal_Pumpkin.Shared.Views
 {
@@ -40,6 +43,8 @@ namespace Universal_Pumpkin.Shared.Views
         protected async Task LoadAllAsync()
         {
             _loading = true;
+
+            await LoadServerIconAsync();
 
             await BindToggle(SwJava, "", "java_edition");
             await BindText(TxtJavaAddr, "", "java_edition_address");
@@ -334,9 +339,192 @@ namespace Universal_Pumpkin.Shared.Views
             }
         }
 
-        protected async void BtnOpen_Click(object sender, RoutedEventArgs e)
+        private async Task<bool> ConfirmRestartOrExitAsync(string title, string message)
+        {
+#if UWP1709
+    bool canRestart = true;
+#else
+            bool canRestart = false;
+#endif
+
+            var dialog = CreateDialog();
+            dialog.Title = title;
+            dialog.Content = message + (canRestart ? "\n\nRestart now?" : "\n\nClose the app now?");
+            dialog.PrimaryButtonText = "Yes";
+            dialog.SecondaryButtonText = "No";
+
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+                return false;
+
+#if UWP1709
+    await CoreApplication.RequestRestartAsync("");
+#else
+            CoreApplication.Exit();
+#endif
+
+            return true;
+        }
+
+        protected async void BtnResetIcon_Click(object sender, RoutedEventArgs e)
+        {
+            if (App.Server.IsRunning)
+            {
+                await ShowSimpleDialogAsync(
+                    "Server Running",
+                    "Please stop the server before resetting the server icon.");
+                return;
+            }
+
+            StorageFolder serverRoot = await ((App)Application.Current).GetServerFolderAsync();
+
+            StorageFile packaged = await StorageFile.GetFileFromApplicationUriAsync(
+                new Uri("ms-appx:///Assets/StoreLogo.scale-400.png"));
+
+            var buffer = await FileIO.ReadBufferAsync(packaged);
+            byte[] bytes = buffer.ToArray();
+
+            await IconNormaliser.NormaliseAndWriteIconAsync(bytes, serverRoot, "icon.png");
+
+            await LoadServerIconAsync();
+        }
+
+        protected async void BtnChangeIcon_Click(object sender, RoutedEventArgs e)
+        {
+            if (App.Server.IsRunning)
+            {
+                await ShowSimpleDialogAsync(
+                    "Server Running",
+                    "Please stop the server before changing the server icon.");
+                return;
+            }
+
+            StorageFolder serverRoot = await ((App)Application.Current).GetServerFolderAsync();
+
+            var picker = new FileOpenPicker
+            {
+                SuggestedStartLocation = PickerLocationId.PicturesLibrary,
+                ViewMode = PickerViewMode.Thumbnail
+            };
+            picker.FileTypeFilter.Add(".png");
+            picker.FileTypeFilter.Add(".jpg");
+            picker.FileTypeFilter.Add(".jpeg");
+
+            var file = await picker.PickSingleFileAsync();
+            if (file == null) return;
+
+            var buffer = await FileIO.ReadBufferAsync(file);
+            byte[] bytes = buffer.ToArray();
+
+            await IconNormaliser.NormaliseAndWriteIconAsync(bytes, serverRoot, "icon.png");
+
+            await LoadServerIconAsync();
+
+            await ConfirmRestartOrExitAsync(
+                "Server Icon Updated",
+                "Your server icon has been updated to the standard 64×64 format.");
+        }
+
+        private async Task LoadServerIconAsync()
+        {
+            try
+            {
+                StorageFolder serverRoot = await ((App)Application.Current).GetServerFolderAsync();
+
+                StorageFile iconFile = await serverRoot.TryGetItemAsync("icon.png") as StorageFile;
+
+                if (iconFile != null)
+                {
+                    using (var stream = await iconFile.OpenReadAsync())
+                    {
+                        var bmp = new BitmapImage();
+                        await bmp.SetSourceAsync(stream);
+                        ImgServerIcon.Source = bmp;
+                    }
+                }
+                else
+                {
+                    ImgServerIcon.Source = new BitmapImage(
+                        new Uri("ms-appx:///Assets/StoreLogo.scale-400.png"));
+                }
+            }
+            catch
+            {
+                ImgServerIcon.Source = new BitmapImage(
+                    new Uri("ms-appx:///Assets/StoreLogo.scale-400.png"));
+            }
+        }
+
+        protected async void BtnOpenLocalState_Click(object sender, RoutedEventArgs e)
         {
             await Launcher.LaunchFolderAsync(ApplicationData.Current.LocalFolder);
+        }
+
+        protected async void BtnChangeLocation_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = CreateDialog();
+            dialog.Title = "Move App to Another Drive";
+            dialog.Content =
+                "To store servers or worlds on a different drive, Windows requires the entire app to be moved.\n\n" +
+                "1) Locate 'Universal Pumpkin'\n" +
+                "2) Select the more options button\n" + 
+                "3) Select 'Move' and choose your preferred drive.\n\n" +
+                "This will safely move all server data and settings.";
+            dialog.PrimaryButtonText = "Open Settings";
+            dialog.SecondaryButtonText = "Cancel";
+
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            {
+                await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:appsfeatures"));
+            }
+        }
+
+        private async Task CopyFolder(StorageFolder source, StorageFolder dest)
+        {
+            foreach (var file in await source.GetFilesAsync())
+            {
+                await file.CopyAsync(dest, file.Name, NameCollisionOption.ReplaceExisting);
+            }
+
+            foreach (var sub in await source.GetFoldersAsync())
+            {
+                var newSub = await dest.CreateFolderAsync(sub.Name, CreationCollisionOption.OpenIfExists);
+                await CopyFolder(sub, newSub);
+            }
+        }
+
+        protected async void BtnResetAllSettings_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = CreateDialog();
+            dialog.Title = "Reset All Settings";
+            dialog.Content = "This will delete ALL configuration files. Continue?";
+            dialog.PrimaryButtonText = "Yes";
+            dialog.SecondaryButtonText = "No";
+
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+                return;
+
+            try
+            {
+                StorageFolder serverRoot = await ((App)Application.Current).GetServerFolderAsync();
+
+                try { (await serverRoot.GetFileAsync("configuration.toml")).DeleteAsync(); } catch { }
+                try { (await serverRoot.GetFileAsync("features.toml")).DeleteAsync(); } catch { }
+                try { (await serverRoot.GetFileAsync("icon.png")).DeleteAsync(); } catch { }
+
+                await ConfirmRestartOrExitAsync(
+                    "Settings Reset",
+                    "All settings have been reset.");
+            }
+            catch (Exception ex)
+            {
+                await ShowSimpleDialogAsync("Error", ex.Message);
+            }
+        }
+
+        protected async void BtnOpenServerFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var folder = await ((App)Application.Current).GetServerFolderAsync();
+            await Launcher.LaunchFolderAsync(folder);
         }
 
         protected async Task ShowSimpleDialogAsync(string title, string content)
@@ -609,5 +797,9 @@ namespace Universal_Pumpkin.Shared.Views
         protected TextBlock TxtWorldSize => FindName("TxtWorldSize") as TextBlock;
         protected Button BtnBackup => FindName("BtnBackup") as Button;
         protected Button BtnRestore => FindName("BtnRestore") as Button;
+
+        protected Image ImgServerIcon => FindName("ImgServerIcon") as Image;
+        protected Button BtnChangeIcon => FindName("BtnChangeIcon") as Button;
+        protected Button BtnResetIcon => FindName("BtnResetIcon") as Button;
     }
 }

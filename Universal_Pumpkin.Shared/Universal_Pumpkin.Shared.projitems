@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Helpers & Services -->
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\IconNormaliser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\InlineHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\InlineConverter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\HyperlinkExtensions.cs" />

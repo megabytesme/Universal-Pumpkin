@@ -4,22 +4,27 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
+using Windows.UI.Xaml;
 
 namespace Universal_Pumpkin
 {
     public static class ConfigHelper
     {
         private static readonly List<string> ConfigFiles = new List<string> { "configuration.toml", "features.toml" };
-
         private static readonly SemaphoreSlim _fileLock = new SemaphoreSlim(1, 1);
 
         private static async Task<string> ReadFileAsync(string filename)
         {
             try
             {
-                var folder = ApplicationData.Current.LocalFolder;
-                var file = await folder.GetFileAsync(filename);
-                return await FileIO.ReadTextAsync(file);
+                StorageFolder serverRoot = await ((App)Application.Current).GetServerFolderAsync();
+
+                var item = await serverRoot.TryGetItemAsync(filename);
+                if (item is StorageFile file)
+                {
+                    return await FileIO.ReadTextAsync(file);
+                }
+                return null;
             }
             catch
             {
@@ -46,12 +51,14 @@ namespace Universal_Pumpkin
 
             if (string.IsNullOrEmpty(section))
             {
+
                 var firstSectionMatch = Regex.Match(content, @"^\s*\[.*\]", RegexOptions.Multiline);
                 int limit = firstSectionMatch.Success ? firstSectionMatch.Index : content.Length;
                 blockToSearch = content.Substring(0, limit);
             }
             else
             {
+
                 string sectionPattern = $@"^\s*\[{Regex.Escape(section)}\]";
                 var sectionMatch = Regex.Match(content, sectionPattern, RegexOptions.Multiline);
 
@@ -71,8 +78,10 @@ namespace Universal_Pumpkin
             if (match.Success)
             {
                 string val = match.Groups[1].Value.Trim();
+
                 int commentIndex = val.IndexOf('#');
                 if (commentIndex > -1) val = val.Substring(0, commentIndex).Trim();
+
                 val = val.Trim('"').Trim('\'');
                 return val;
             }
@@ -85,16 +94,25 @@ namespace Universal_Pumpkin
             await _fileLock.WaitAsync();
             try
             {
+
+                newValue = newValue.Trim('"');
+
                 if (key == "seed")
                 {
+
                     newValue = $"\"{newValue}\"";
                 }
                 else if (newValue.ToLower() == "true" || newValue.ToLower() == "false")
                 {
                     newValue = newValue.ToLower();
                 }
-                else if (!int.TryParse(newValue, out _) && !double.TryParse(newValue, out _))
+                else if (long.TryParse(newValue, out _) || double.TryParse(newValue, out _))
                 {
+
+                }
+                else
+                {
+
                     newValue = $"\"{newValue}\"";
                 }
 
@@ -134,12 +152,12 @@ namespace Universal_Pumpkin
 
         private static async Task WriteValueToFileAsync(string filename, string section, string key, string val)
         {
-            var folder = ApplicationData.Current.LocalFolder;
+            StorageFolder serverRoot = await ((App)Application.Current).GetServerFolderAsync();
             StorageFile file;
 
             try
             {
-                file = await folder.GetFileAsync(filename);
+                file = await serverRoot.CreateFileAsync(filename, CreationCollisionOption.OpenIfExists);
             }
             catch
             {
@@ -160,20 +178,17 @@ namespace Universal_Pumpkin
 
                 if (Regex.IsMatch(rootPart, pattern, RegexOptions.Multiline))
                 {
-                    string newRoot = Regex.Replace(
-                        rootPart,
-                        pattern,
-                        m => m.Groups[1].Value + val,
-                        RegexOptions.Multiline);
-
+                    string newRoot = Regex.Replace(rootPart, pattern, m => m.Groups[1].Value + val, RegexOptions.Multiline);
                     await FileIO.WriteTextAsync(file, newRoot + restPart);
                 }
                 else
                 {
+
                     string newContent = $"{key} = {val}\r\n" + content;
                     await FileIO.WriteTextAsync(file, newContent);
                 }
             }
+
             else
             {
                 string sectionHeader = $@"^\s*\[{Regex.Escape(section)}\]";
@@ -181,6 +196,7 @@ namespace Universal_Pumpkin
 
                 if (sectionMatch.Success)
                 {
+
                     int start = sectionMatch.Index + sectionMatch.Length;
                     string preSection = content.Substring(0, start);
                     string afterHeader = content.Substring(start);
@@ -195,19 +211,22 @@ namespace Universal_Pumpkin
 
                     if (Regex.IsMatch(sectionBlock, keyPattern, RegexOptions.Multiline))
                     {
-                        string newBlock = Regex.Replace(
-                            sectionBlock,
-                            keyPattern,
-                            m => m.Groups[1].Value + val,
-                            RegexOptions.Multiline);
 
+                        string newBlock = Regex.Replace(sectionBlock, keyPattern, m => m.Groups[1].Value + val, RegexOptions.Multiline);
                         await FileIO.WriteTextAsync(file, preSection + newBlock + postSection);
                     }
                     else
                     {
+
                         string newBlock = $"\r\n{key} = {val}" + sectionBlock;
                         await FileIO.WriteTextAsync(file, preSection + newBlock + postSection);
                     }
+                }
+                else
+                {
+
+                    string newSectionBlock = $"\r\n\r\n[{section}]\r\n{key} = {val}";
+                    await FileIO.WriteTextAsync(file, content + newSectionBlock);
                 }
             }
         }
