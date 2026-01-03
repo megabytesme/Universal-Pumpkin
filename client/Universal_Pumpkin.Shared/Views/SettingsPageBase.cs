@@ -306,7 +306,9 @@ namespace Universal_Pumpkin.Shared.Views
             {
                 try
                 {
-                    await _vm.DeleteWorldData();
+                    StorageFolder serverRoot = await ((App)Application.Current).GetServerFolderAsync();
+
+                    await _vm.DeleteWorldData(serverRoot);
 
                     var deleteCompleteDialog = CreateDialog();
                     deleteCompleteDialog.Title = "World Files Deleted";
