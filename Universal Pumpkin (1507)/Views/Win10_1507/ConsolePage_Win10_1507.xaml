@@ -194,9 +194,9 @@
                       ItemTemplateSelector="{StaticResource LogSelector}"
                       SelectionMode="Extended"
                       ScrollViewer.VerticalScrollBarVisibility="Visible"
-                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                      ScrollViewer.HorizontalScrollMode="Disabled"
-                      ScrollViewer.IsHorizontalRailEnabled="False"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                      ScrollViewer.HorizontalScrollMode="Auto"
+                      ScrollViewer.IsHorizontalRailEnabled="True"
                       BorderBrush="{ThemeResource SystemControlBackgroundAccentBrush}"
                       BorderThickness="1"
                       KeyDown="LogList_KeyDown">
