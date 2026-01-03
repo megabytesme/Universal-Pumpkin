@@ -1,21 +1,22 @@
 # Universal Pumpkin
 
-| Lumia 950 XL | Surface Duo |
-|--------------|-------------|
-| <img width="24" height="24" alt="Pumpkin - 1607" src="https://github.com/user-attachments/assets/67000671-9a48-461f-b498-1ec5d1dcc56b" /> **Universal Pumpkin (1507)** | <img width="24" height="24" alt="Segoe UI Emoji Regular - Jack-O-Lantern" src="https://github.com/user-attachments/assets/5592d52d-37e8-4fa7-ab9c-bce6b8e9c5f8" /> **Universal Pumpkin** |
-| ![Lumia950XL-Windows10Mobile](https://github.com/user-attachments/assets/1706fa3b-c884-4238-a43a-ad2bce1b9ced) | ![SurfaceDuo-Andromeda](https://github.com/user-attachments/assets/c0d79ead-ee6e-4fd6-90b4-b744135b40b9) |
-| _Windows 10 Mobile – 15254.603_ | _Andromeda OS (8828080) – 18236.1000_ |
 
-**Universal Pumpkin** is a native, high-performance Minecraft server client for the Universal Windows Platform (UWP). It wraps the lightning-fast **Pumpkin** server engine (Rust) into a portable application that runs on everything supported by the Universal Windows Platform (UWP).
+| Lumia 950 XL | Surface Duo | PC |
+|--------------|-------------|-------------|
+| <img width="24" height="24" alt="Pumpkin - 1607" src="https://github.com/user-attachments/assets/67000671-9a48-461f-b498-1ec5d1dcc56b" /> **Universal Pumpkin (1507)** | <img width="24" height="24" alt="Segoe UI Emoji Regular - Jack-O-Lantern" src="https://github.com/user-attachments/assets/5592d52d-37e8-4fa7-ab9c-bce6b8e9c5f8" /> **Universal Pumpkin** | <img width="24" height="24" alt="Segoe UI Emoji Regular - Jack-O-Lantern" src="https://github.com/user-attachments/assets/5592d52d-37e8-4fa7-ab9c-bce6b8e9c5f8" /> **Universal Pumpkin** |
+| ![Lumia950XL-Windows10Mobile](https://github.com/user-attachments/assets/1706fa3b-c884-4238-a43a-ad2bce1b9ced) | ![SurfaceDuo-Andromeda](https://github.com/user-attachments/assets/c0d79ead-ee6e-4fd6-90b4-b744135b40b9) | <img width="1884" height="1401" alt="Screenshot 2026-01-03 041941" src="https://github.com/user-attachments/assets/1346dd3c-1c3d-41c9-91d2-51bfa9113326" /> |
+| _Windows 10 Mobile – 15254.603, ARM_ | _Andromeda OS (8828080) – 18236.1000, ARM64_ | _Windows 11 - 26220.7523, X64_ |
+
+**Universal Pumpkin** is a native, high-performance Minecraft server client for the Universal Windows Platform (UWP). It wraps the fast **Pumpkin** server engine (Rust) into a portable application that runs on everything supported by the Universal Windows Platform (UWP).
 
 **Disclaimer:** This is an unofficial, third-party server implementation. This project is not affiliated with, endorsed, or sponsored by Mojang Studios, Microsoft, or the official Pumpkin project. "Minecraft" is a trademark of Mojang Synergies AB.
 
 ## Features
 
-*   **Native & Lightweight:** A fully functional Minecraft server running as a UWP app. No Java installation required, no heavy runtime overhead.
-*   **True Universal Support:** Runs natively on **x64**, **x86**, **ARM64**, and **ARM32**.
-*   **Latest Version Support:** Targets Minecraft **1.21.11**, utilizing the Pumpkin engine for modern gameplay mechanics.
-*   **Hybrid Protocol:** Supports **Java Edition** (TCP) connections out of the box, with experimental support for **Bedrock Edition** (UDP).
+*   **Native & Lightweight:** A fully functional Minecraft server running as a UWP app - No Java needed.
+*   **Universal:** Runs natively on **x64**, **x86**, **ARM64**, and **ARM32**.
+*   **Latest Version Support:** Targets Minecraft **1.21.11**.
+*   **Hybrid Protocol:** Supports **Java Edition** (TCP) connections, with support for **Bedrock Edition** (UDP).
 *   **High Performance:** Leverages Rust’s multi-threading and memory safety for maximum tick speeds.
 
 ## Download
