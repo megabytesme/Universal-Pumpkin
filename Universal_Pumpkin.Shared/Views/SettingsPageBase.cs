@@ -565,7 +565,7 @@ namespace Universal_Pumpkin.Shared.Views
                         new LineBreak(),
                         new LineBreak(),
 
-                        new Run { Text = "Copyright © 2025 MegaBytesMe" },
+                        new Run { Text = "Copyright © 2026 MegaBytesMe" },
                         new LineBreak(),
                         new LineBreak(),
 
