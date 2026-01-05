@@ -252,8 +252,7 @@
                            FontSize="14"
                            TextWrapping="NoWrap"
                            Opacity="0.6"
-                           Canvas.ZIndex="1"
-                           Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
+                           Canvas.ZIndex="1"/>
             </Grid>
 
             <Button x:Name="BtnSend"

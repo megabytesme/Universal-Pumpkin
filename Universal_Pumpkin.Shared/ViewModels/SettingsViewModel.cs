@@ -176,7 +176,7 @@ namespace Universal_Pumpkin.ViewModels
         public string GetPumpkinVersion() => "0.1.0-dev+1.21.11";
         public string GetMinecraftVersion() => "1.21.11";
         public int GetProtocolVersion() => 774;
-        public string GetPumpkinCommitId() => "70b31323967bb99fd4feefab8e96124be369cd6f";
+        public string GetPumpkinCommitId() => "ce652860e0066c869b1e9acc873b9ce5165d826f";
         public Uri GetPumpkinCommitUri() => new Uri("https://github.com/Pumpkin-MC/Pumpkin/tree/" + GetPumpkinCommitId());
     }
 }
