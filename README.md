@@ -15,7 +15,7 @@
 
 *   **Native & Lightweight:** A fully functional Minecraft server running as a UWP app - No Java needed.
 *   **Universal:** Runs natively on **x64**, **x86**, **ARM64**, and **ARM32**.
-*   **Latest Version Support:** Targets Minecraft **1.21.11**.
+*   **Latest Version Support:** Targets Minecraft **26.1**.
 *   **Hybrid Protocol:** Supports **Java Edition** (TCP) connections, with support for **Bedrock Edition** (UDP).
 *   **High Performance:** Leverages Rust’s multi-threading and memory safety for maximum tick speeds.
 

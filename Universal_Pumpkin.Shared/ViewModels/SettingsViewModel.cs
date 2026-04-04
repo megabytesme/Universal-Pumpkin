@@ -173,10 +173,10 @@ namespace Universal_Pumpkin.ViewModels
             return Package.Current.Id.Architecture.ToString().ToLower();
         }
 
-        public string GetPumpkinVersion() => "0.1.0-dev+1.21.11";
-        public string GetMinecraftVersion() => "1.21.11";
-        public int GetProtocolVersion() => 774;
-        public string GetPumpkinCommitId() => "ce652860e0066c869b1e9acc873b9ce5165d826f";
+        public string GetPumpkinVersion() => "0.1.0-dev+26.1";
+        public string GetMinecraftVersion() => "26.1";
+        public int GetProtocolVersion() => 775;
+        public string GetPumpkinCommitId() => "5edd0e93dfbb5846e55c5a880173c4ad5c6f3257";
         public Uri GetPumpkinCommitUri() => new Uri("https://github.com/Pumpkin-MC/Pumpkin/tree/" + GetPumpkinCommitId());
     }
 }
